@@ -1,0 +1,9 @@
+{
+  "module": {
+    "name": "vap_cj",
+    "type": "har",
+    "deviceTypes": [
+      "default"
+    ]
+  }
+}

@@ -26,6 +26,14 @@
   },
   "modules": [
     {
+      "name": "vap_cpp",
+      "srcPath": "./vap_cpp"
+    },
+    {
+      "name": "vap_cj",
+      "srcPath": "./vap_cj"
+    },
+    {
       "name": "entry",
       "srcPath": "./entry",
       "targets": [

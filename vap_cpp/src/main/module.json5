@@ -1,0 +1,11 @@
+{
+  "module": {
+    "name": "vap_cpp",
+    "type": "har",
+    "deviceTypes": [
+      "default",
+      "tablet",
+      "2in1"
+    ]
+  }
+}
