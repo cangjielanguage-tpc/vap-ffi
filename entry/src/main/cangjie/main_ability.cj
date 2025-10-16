@@ -1,9 +1,15 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
 package ohos_app_cangjie_entry
 
 internal import ohos.base.AppLog
 internal import ohos.ability.AbilityStage
 internal import ohos.ability.LaunchReason
-internal import cj_res_entry.app
+internal import ohos.ability.AbilityContext
+import ohos.ability.Ability
+
+public var globalAbilityContext: Option<AbilityContext> = Option<AbilityContext>.None
 
 class MainAbility <: Ability {
     public init() {
@@ -13,6 +19,7 @@ class MainAbility <: Ability {
 
     public override func onCreate(want: Want, launchParam: LaunchParam): Unit {
         AppLog.info("MainAbility OnCreated.${want.abilityName}")
+        globalAbilityContext = Option<AbilityContext>.Some(this.context)
         match (launchParam.launchReason) {
             case LaunchReason.START_ABILITY => AppLog.info("START_ABILITY")
             case _ => ()

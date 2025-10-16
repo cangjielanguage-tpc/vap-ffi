@@ -1,0 +1,5 @@
+{
+  "libvap_cpp.so": {
+    "source": "src/mock/Libvap_cpp.mock.ets"
+  }
+}

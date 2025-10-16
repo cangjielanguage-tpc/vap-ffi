@@ -1,21 +1,10 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
-#include "mask_render.h"
+#include "mask/mask_render.h"
 
-#include "log.h"
+#include "util/log.h"
 
 #include <GLES2/gl2ext.h>
 #include "common_const.h"
@@ -26,7 +15,6 @@ void MaskRender::RenderFrame(MaskConfig maskConfig)
 {
     auto maskTexId = maskConfig.GetMaskTexId();
     if (maskTexId <= 0) {
-        LOGE("maskTexId not ready, cont Rendered");
     }
     
     auto texTuple = maskConfig.maskTexPair_;
@@ -38,14 +26,14 @@ void MaskRender::RenderFrame(MaskConfig maskConfig)
     if (std::get<0>(positionTuple).w != 0 && std::get<0>(positionTuple).h != 0) {
         maskPositionRect = std::get<0>(positionTuple);
     } else {
-        maskPositionRect = PointRect(0, 0, maskConfig.width_, maskConfig.height_);
+        maskPositionRect = PointRect(0, 0, maskConfig.m_width, maskConfig.m_height);
     }
 
     RefVec2 maskPositionRefVec2;
     if (std::get<1>(positionTuple).w != 0 && std::get<1>(positionTuple).h !=0) {
         maskPositionRefVec2 = std::get<1>(positionTuple);
     } else {
-        maskPositionRefVec2 = RefVec2(maskConfig.width_, maskConfig.height_);
+        maskPositionRefVec2 = RefVec2(maskConfig.m_width, maskConfig.m_height);
     }
     
     m_maskShader->UseProgram();

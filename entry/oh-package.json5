@@ -6,7 +6,8 @@
   "author": "",
   "license": "",
   "dependencies": {
-    'vap_cj': "file:../vap_cj"
+    "vap_cj": "file:../vap_cj"
   }
 }
+
 

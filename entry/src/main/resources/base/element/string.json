@@ -11,6 +11,18 @@
     {
       "name": "EntryAbility_label",
       "value": "label"
+    },
+    {
+      "name": "title",
+      "value": "Render Example"
+    },
+    {
+      "name": "button_text",
+      "value": "LoadYUV"
+    },
+    {
+      "name": "read_file",
+      "value": "读取权限"
     }
   ]
 }
