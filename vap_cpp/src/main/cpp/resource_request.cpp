@@ -1,16 +1,5 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
 #include "resource_request.h"
@@ -24,14 +13,14 @@
 #include <native_drawing/drawing_text_typography.h>
 #include <string>
 
-#include "log.h"
 #include "common_const.h"
+#include "util/log.h"
 
 using namespace CommonConst;
 
-void ResourceRequest::SetWidth(uint64_t width) { width_ = width; }
+void ResourceRequest::SetWidth(uint64_t width) { m_width = width; }
 
-void ResourceRequest::SetHeight(uint64_t height) { height_ = height; }
+void ResourceRequest::SetHeight(uint64_t height) { m_height = height; }
 
 void ResourceRequest::Create()
 {
@@ -39,7 +28,7 @@ void ResourceRequest::Create()
     // 定义bitmap的像素格式
     OH_Drawing_BitmapFormat cFormat{COLOR_FORMAT_RGBA_8888, ALPHA_FORMAT_UNPREMUL};
     // 构造对应格式的bitmap
-    OH_Drawing_BitmapBuild(cBitmap_, width_, height_, &cFormat);
+    OH_Drawing_BitmapBuild(cBitmap_, m_width, m_height, &cFormat);
 
     // 创建一个canvas对象
     cCanvas_ = OH_Drawing_CanvasCreate();
@@ -87,10 +76,10 @@ void ResourceRequest::DrawText(TextOption &txtOpt)
     OH_Drawing_TypographyHandlerPopTextStyle(handler);
     OH_Drawing_Typography *typography = OH_Drawing_CreateTypography(handler);
     // 设置页面最大宽度
-    double maxWidth = width_;
+    double maxWidth = m_width;
     OH_Drawing_TypographyLayout(typography, maxWidth);
     // 设置文本在画布上绘制的起始位置
-    double position[2] = {0, (height_ - fontSize) / 2.0};
+    double position[2] = {0, (m_height - fontSize) / 2.0};
     // 将文本绘制到画布上
     OH_Drawing_TypographyPaint(typography, cCanvas_, position[0], position[1]);
     
@@ -109,15 +98,15 @@ void ResourceRequest::GetData(std::vector<uint8_t> &data)
     OH_Drawing_BitmapGetImageInfo(cBitmap_, &info);
 
     uint8_t *value = static_cast<uint8_t *>(bitmapAddr);
-    LOGD("GetData data:%{public}d, %{public}ld * %{public}ld %{public}d ** %{public}d", value == nullptr, width_,
-         height_, info.width, info.height);
-    if (value && width_ > 0 && height_ > 0) {
+    LOGD("GetData data:%{public}d, %{public}ld * %{public}ld %{public}d ** %{public}d", value == nullptr, m_width,
+         m_height, info.width, info.height);
+    if (value && m_width > 0 && m_height > 0) {
         LOGD("GetData ok");
     } else {
         LOGE("GetData invalid data");
         return;
     }
-    data.assign(value, value + width_ * height_ * FOUR);
+    data.assign(value, value + m_width * m_height * FOUR);
 }
 
 void ResourceRequest::Release()

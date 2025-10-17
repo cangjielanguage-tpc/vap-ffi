@@ -1,25 +1,3 @@
-.git/
-.vscode/
-.idea/
-.cache/
-
-# cangjie
-build/
-target/
-output/
-module-resolve.json
-module-lock.json
-cjpm.lock
-.cjpm-history
-*.macrocall
-*.gcda
-*.gcno
-
-
-# 其他
-log
-report
-tmp
 /node_modules
 /oh_modules
 /local.properties
@@ -36,7 +14,5 @@ tmp
 **/*.cj.macrocall
 **/ability_mainability_entry.cj
 **/module_**_entry.cj
-/oh-package-lock.json5
-**/**/oh-package-lock.json5
-/vap_cpp/src/main/cpp/include/util/arm64-v8a/
-/vap_cpp/src/main/cpp/include/util/x86_64/
+**/IDL_Dependencies_List~
+**/build-script-cache

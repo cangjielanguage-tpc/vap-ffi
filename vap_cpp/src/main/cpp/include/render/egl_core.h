@@ -1,20 +1,9 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
-#ifndef VAP_EGL_CORE_H
-#define VAP_EGL_CORE_H
+#ifndef NATIVE_XCOMPONENT_EGL_CORE_H
+#define NATIVE_XCOMPONENT_EGL_CORE_H
 
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -38,6 +27,7 @@ class EGLCore {
 public:
     explicit EGLCore(){};
     ~EGLCore() {}
+    bool EglContextInit(void* window);
     bool EglContextInit(EGLNativeWindowType window, int width, int height, std::string uri,
         std::map<std::string, MixInputData> &iptData);
     
@@ -68,14 +58,17 @@ public:
     bool FinishLoad();
     void GetCurrentClickTxt(int32_t eventX, int32_t eventY, std::string &clickRes);
     
-    void UpdateSize(int width, int height)
-    {
-        LOGD("enter UpdateSize %{public}d * %{public}d ", width, height);
-        m_width = width;
-        m_height = height;
-    }
-    
+    void UpdateSize(int width, int height);
+//    {
+//        LOGD("enter UpdateSize %{public}d * %{public}d ", width, height);
+//        m_width = width;
+//        m_height = height;
+//    }
+    void Draw(int& hasDraw);
+    void Background();
+    void ChangeColor(int& hasChangeColor);
     std::shared_ptr<AnimConfig> m_animConfig;
+
 private:
     VideoMode m_defaultVideoMode = VIDEO_MODE_SPLIT_HORIZONTAL;
     EGLConfig ChooseConfig();
@@ -86,6 +79,15 @@ private:
     void FitCenter();
     void CenterCrop();
     void FitXY();
+    
+    GLuint LoadShader(GLenum type, const char * shaderSrc);
+    GLuint CreateProgram(const char* vertexShader, const char* fragShader);
+    GLint PrepareDraw();
+    bool ExecuteDraw(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long verSize);
+    bool ExecuteDrawStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long verSize);
+    bool ExecuteDrawNewStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long verSize);
+    void Rotate2d(GLfloat centerX, GLfloat centerY, GLfloat* rotateX, GLfloat* rotateY, GLfloat theta);
+    bool FinishDraw();
 
 private:
     EGLNativeWindowType m_eglWindow;
@@ -98,7 +100,8 @@ private:
     int m_width;
     int m_height;
     GLfloat m_widthPercent;
-    unsigned char *buf[3] = {0};
+    
+//    unsigned char *buf[3] = {0};
     std::unique_ptr<class YuvRender> m_render = nullptr;
     std::unique_ptr<class MixRender> m_mixRender = nullptr;
     std::unique_ptr<MaskRender> m_maskRender = nullptr;
@@ -114,4 +117,4 @@ private:
     int32_t m_videoHeight = 0;
     bool m_isH265 = false;
 };
-#endif // VAP_EGL_CORE_H
+#endif // NATIVE_XCOMPONENT_EGL_CORE_H

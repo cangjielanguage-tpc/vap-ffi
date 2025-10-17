@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ */
+package ohos_app_cangjie_entry
+
+internal import ohos.base.*
+internal import ohos.component.Column
+internal import ohos.component.Row
+internal import ohos.component.Button
+internal import ohos.component.Text
+internal import ohos.component.CustomView
+internal import ohos.component.CJEntry
+internal import ohos.component.loadNativeView
+internal import ohos.state_manage.SubscriberManager
+internal import ohos.state_manage.ObservedProperty
+internal import ohos.state_manage.LocalStorage
+internal import ohos.hilog.Hilog
+internal import ohos.resource_manager.*
+import ohos.ability.getStageContext
+import ohos.base.AsyncCallback
+import ohos.component.SelectOption
+import std.collection.concurrent.ConcurrentHashMap
+import std.collection.HashMap
+import ohos.component.Stack
+import ohos.component.Scroll
+import ohos.component.Select
+import ohos.component.Visibility
+import ohos.state_macro_manage.r
+import ohos.state_manage.*
+import ohos.state_macro_manage.Component
+import ohos.state_macro_manage.Entry
+import ohos.state_macro_manage.State
+import ohos.component.Image
+import std.collection.ArrayList
+import ohos.component.ImageRepeat
+import ohos.component.ViewBase
+import ohos.image.Image as MultiImage
+import ohos.image.Component as ImageComponent
+import ohos.image.InitializationOptions
+import ohos.image.PixelMapFormat
+import ohos.image.PixelMap
+import ohos.image.createPixelMap
+import ohos.image.Size as UniqueImageSize
+import ohos.component.ImageSize
+import ohos.component.ScrollDirection
+import ohos.component.BorderStyle
+import ohos.component.FontWeight
+import kit.BasicServicesKit.*
+import ohos.ability.getStageContext
+import ohos.state_macro_manage.Builder
+import ohos.base.AsyncCallback
+import vap_cj.*
+import ohos.component.XComponent
+import ohos.component.XComponentType
+
+public class GlobalLoops {
+    public static var stateComponent: HashMap<String, Bool> = HashMap<String, Bool>();
+}
+
+@Entry
+@Component
+public class GeneralAnimation {
+    @State
+    var vapController: VapController = VapController("GeneralAnimation")
+
+    @State
+    var fitType: FitType = FitType.FIT_CENTER
+
+    @State
+    var buttonEnabled: Bool = true;
+
+    @State
+    var text: String = "fix_center"
+
+    func viewInit() {
+        println("GeneralAnimation")
+    }
+    @State
+    var values: Array<SelectOption> =
+        [
+            SelectOption("fix_xy", icon: ""),
+            SelectOption("fix_center", icon: ""),
+            SelectOption("center_crop", icon: "")
+        ]
+
+    protected func aboutToAppear() {
+    	this.vapController.stop()
+    }
+    protected func onPageHide() {
+    	this.vapController.stop()
+    }
+    protected func onPageShow() {}
+
+
+
+    func build() {
+        Column() {
+            Stack {
+                XComponent(id: 'vap_xcomponentId_General', `type`: XComponentType.SURFACE, controller: vapController).width(100.percent).height(100.percent)
+                .backgroundColor(Color.TRANSPARENT).visibility(getVisible(this.buttonEnabled))
+            }.width(100.percent).height(90.percent).backgroundImage(src: @r(app.media.bg), repeat: ImageRepeat.XY).backgroundImageSize(ImageSize.FILL)
+
+            Scroll() {
+                Row() {
+                    Select(this.values)
+                        .selected(1)
+                        .value(text)
+                        .onSelect(
+                            {
+                                index: Int32, event =>
+                                this.fitType = this.fitType.getFitType(index)
+                                Hilog.info(0, "=======  GeneralAnimation Select =========", "[${index}]")
+                            }
+                        )
+                    Button("Play")
+                        .fontWeight(FontWeight.Normal)
+                        .width(40.percent)
+                        .margin(top: 15.px, right: 10.px, bottom: 15.px, left: 10.px)
+                        .onClick({
+                            event => this.play()
+                        }).enabled(this.buttonEnabled)
+
+                    Button("Pause")
+                        .width(20.percent)
+                        .margin(top: 15.px, right: 10.px, bottom: 15.px, left: 10.px)
+                        .onClick({
+                            event => this.pause()
+                        })
+
+                    Button("Stop")
+                        .width(20.percent)
+                        .margin(top: 15.px, right: 10.px, bottom: 15.px, left: 10.px)
+                        .onClick({
+                            event => this.stop()
+                        })
+                }
+            }
+                .width(100.percent)
+                .scrollable(ScrollDirection.Horizontal)
+                .padding(bottom: 10.px)
+                .margin(left: 5.px, right: 5.px)
+                .border(width: 4.px, color: Color.GRAY, radius: 10.px, style: BorderStyle.Solid)
+                .backgroundColor(Color.WHITE)
+        }.width(100.percent).height(100.percent)
+    }
+
+    private func play(): Unit {
+        try {
+            var rootPath = globalAbilityContext.getOrThrow().resourceDir
+            var filePath = "${rootPath}/great_gift.mp4"
+            let opts: ArrayList<CangjieMixData> = ArrayList<CangjieMixData>();
+            this.vapController.setFitType(this.fitType)
+            this.vapController.setVideoMode(VideoMode.VIDEO_MODE_SPLIT_HORIZONTAL)
+
+            this.vapController.setDownloadAttribute(50000, download)
+            this.vapController.setLoop(1)
+            this.buttonEnabled = false
+            this.vapController.play(filePath, opts, cbFn)
+        } catch (e: Exception) {
+            Hilog.error(0, "=======GeneralAnimation  play error=========", "${e.message}")
+        }
+    }
+
+    private func pause(): Unit {
+        Hilog.info(0, "=======VAPXAnimation  pause =========", "pause")
+        try {
+            this.vapController.pause()
+        } catch (e: Exception) {
+            Hilog.error(0, "=======VAPXAnimation  pause error=========", "${e.message}")
+        }
+    }
+
+    private func stop(): Unit {
+        Hilog.info(0, "=======VAPXAnimation  stop =========", "stop")
+        try {
+            this.vapController.stop()
+        } catch (e: Exception) {
+            Hilog.error(0, "=======VAPXAnimation  stop error=========", "${e.message}")
+        }
+    }
+
+    func getVisible(b: Bool): Visibility {
+        if (b) {
+            return Visibility.Hidden
+        } else {
+            return Visibility.Visible
+        }
+    }
+
+    func cbFn(): Unit {
+        this.buttonEnabled = true
+        Hilog.info(0, "=======GeneralAnimation  cbFn =========", "-----GeneralAnimation--cbFn-")
+        // 触发应用侧回调
+    }
+
+    func download(data: DownLoadData): Unit {
+        Hilog.info(0, "=======download  DownLoadData =========", "-----download  DownLoadData-")
+    }
+}

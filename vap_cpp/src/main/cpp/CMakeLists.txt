@@ -5,7 +5,6 @@ include(clone-repo.cmake)
 set(CMAKE_CXX_STANDARD 17)
 set(NATIVERENDER_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DOHOS_PLATFORM)
-clone_repo(json https://gitee.com/mirrors/nlohmann-json.git v3.12.0 include/util)
 add_subdirectory(${NATIVERENDER_ROOT_PATH}/include/util/${OHOS_ARCH}/json)
 add_definitions(-DNAPI_VERSION=8)
 include_directories(
@@ -35,11 +34,13 @@ add_library(vap SHARED
     render/plugin_render.cpp
     render/yuv_render.cpp
     render/anim_config.cpp
+    render/plugin_render_cangjie_ffi.cpp
     util/shader_util.cpp
     util/tex_coords_util.cpp
     util/vertex_util.cpp
     util/texture_load_util.cpp
-    napi_init.cpp
+    util/cj_string_util.cpp
+#    napi_init.cpp
     video_decoder.cpp
     demuxer.cpp
     player.cpp
@@ -48,6 +49,7 @@ add_library(vap SHARED
     vap_callback.cpp
 )
 
+target_link_libraries(vap PUBLIC libnative_window.so)
 target_link_libraries(vap PUBLIC libace_napi.z.so)
 target_link_libraries(vap PUBLIC EGL)
 target_link_libraries(vap PUBLIC GLESv3)

@@ -2,8 +2,10 @@
   "name": "vap_cpp",
   "version": "1.0.0",
   "description": "Please describe the basic information.",
+  "main": "",
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    //"libvap_cpp.so": "file:./src/main/cpp/types/libvap_cpp"
   }
 }

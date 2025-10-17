@@ -1,34 +1,22 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
-
 #ifndef VAP_DATATYPE_INFO_H
 #define VAP_DATATYPE_INFO_H
 
+#include "mix_render.h"
+#include "multimedia/player_framework/native_avbuffer.h"
+#include "multimedia/player_framework/native_avcodec_base.h"
 #include <EGL/eglplatform.h>
 #include <bits/alltypes.h>
+#include <condition_variable>
 #include <cstdint>
 #include <js_native_api_types.h>
 #include <multimedia/player_framework/native_avcodec_videoencoder.h>
+#include <native_buffer/native_buffer.h>
 #include <ohaudio/native_audiostream_base.h>
 #include <string>
-#include <condition_variable>
 #include <queue>
-#include <native_buffer/native_buffer.h>
-#include "mix_render.h"
-#include "multimedia/player_framework/native_avcodec_base.h"
-#include "multimedia/player_framework/native_avbuffer.h"
 
 #define ANNEXB_INPUT_ONLY 1
 
@@ -39,6 +27,8 @@ constexpr int32_t BITRATE_10M = 10 * 1024 * 1024; // 10Mbps
 constexpr int32_t BITRATE_20M = 20 * 1024 * 1024; // 20Mbps
 constexpr int32_t BITRATE_30M = 30 * 1024 * 1024; // 30Mbps
 
+typedef void (*callbackcj)();
+
 struct AudioInitData {
     OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
     int32_t samplingRate = 48000;
@@ -46,6 +36,44 @@ struct AudioInitData {
     OH_AudioStream_SampleFormat format = AUDIOSTREAM_SAMPLE_S16LE;
     OH_AudioStream_EncodingType encodingType = AUDIOSTREAM_ENCODING_TYPE_RAW;
     OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+};
+
+struct CJBytesArray {
+    int64_t size;
+    uint8_t *buf;
+};
+
+typedef struct {
+    CJBytesArray tag;
+}TagCharCp;
+
+struct CJInt64Array {
+    int64_t size;
+    CJBytesArray *buf;
+};
+
+struct SrcInfoo {
+    long long size;
+    int64_t srcId;
+    CJBytesArray tag;
+    int64_t srcType;
+    int32_t width;
+    int32_t height;
+};
+
+struct SrcInfoArray {
+    long long size;
+    int64_t *srcIdInt64;
+    int64_t *srcTypeInt64;
+    CJInt64Array xxx;
+    int32_t width;
+    int32_t height;
+};
+
+struct VideoInfo {
+    int64_t width;
+    int64_t height;
+    std::vector<SrcInfoo> srcInfo;
 };
 
 struct VAPInfo {
@@ -85,11 +113,8 @@ struct VAPInfo {
     double memcpyTime = 0;
     double writeTime = 0;
     
-    void (*playDoneCallback)(void *context) = nullptr;
-    void *playDoneCallbackData = nullptr;
-    
-    int32_t width;
-    int32_t height;
+    int64_t width;
+    int64_t height;
     std::string uri;
     std::map<std::string, MixInputData> iptData;
 };
@@ -223,8 +248,7 @@ enum class VideoFitType {
 };
 
 typedef struct CallbackContext {
-    napi_env env = nullptr;
-    napi_ref callbackRef = nullptr;
+    callbackcj callbackRef;
     VapState vapState = VapState::UNKNOWN;
     int32_t err;
     JSAnimConfig jsAnimConfig;
