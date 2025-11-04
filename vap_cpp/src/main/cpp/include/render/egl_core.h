@@ -28,14 +28,21 @@ public:
     explicit EGLCore(){};
     ~EGLCore() {}
     bool EglContextInit(void* window);
-    bool EglContextInit(EGLNativeWindowType window, int width, int height, std::string uri,
+
+    bool EglContextInit1(EGLNativeWindowType window, int width, int height, std::string uri,
         std::map<std::string, MixInputData> &iptData);
+
+    bool CreateEnvironment();
+    void Draw(int& hasDraw);
+    void Background();
+    void ChangeColor(int& hasChangeColor);
+    void Release();
+//    void UpdateSize(int width, int height);
     
     void SetFitType(VideoFitType fitType)
     {
         m_fitType = fitType;
     }
-    
     void SetVideoMode(VideoMode videoMode)
     {
         m_defaultVideoMode = videoMode;
@@ -43,33 +50,39 @@ public:
             m_animConfig->isDefaultConfig = true;
         }
     }
-    
     void SetVideoSize(int32_t width, int32_t height, std::string mime)
     {
         m_videoWidth = width;
         m_videoHeight = height;
         m_isH265 = mime == MIME_VIDEO_HEVC;
     }
-    bool CreateEnvironment();
-    void Release();
+    
     void Render(RenderData &renderData);
     bool SeparateYUV(const std::vector<uint8_t> &data,
         int alignWidth, int alignHeight, int videoWidth, int videoHeight);
     bool FinishLoad();
     void GetCurrentClickTxt(int32_t eventX, int32_t eventY, std::string &clickRes);
     
-    void UpdateSize(int width, int height);
-//    {
-//        LOGD("enter UpdateSize %{public}d * %{public}d ", width, height);
-//        m_width = width;
-//        m_height = height;
-//    }
-    void Draw(int& hasDraw);
-    void Background();
-    void ChangeColor(int& hasChangeColor);
+    void UpdateSize(int width, int height)
+    {
+        LOGD("enter UpdateSize %{public}d * %{public}d ", width, height);
+        m_width = width;
+        m_height = height;
+        InitFitConfig();
+    }
+    
     std::shared_ptr<AnimConfig> m_animConfig;
 
 private:
+    GLuint LoadShader(GLenum type, const char * shaderSrc);
+    GLuint CreateProgram(const char* vertexShader, const char* fragShader);
+    GLint PrepareDraw();
+    bool ExecuteDraw(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long vertSize);
+    bool ExecuteDrawStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long vertSize);
+    bool ExecuteDrawNewStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long vertSize);
+    void Rotate2d(GLfloat centerX, GLfloat centerY, GLfloat* rotateX, GLfloat* rotateY, GLfloat theta);
+    bool FinishDraw();
+
     VideoMode m_defaultVideoMode = VIDEO_MODE_SPLIT_HORIZONTAL;
     EGLConfig ChooseConfig();
     void GetAttributes(std::vector<int> &array);
@@ -79,15 +92,6 @@ private:
     void FitCenter();
     void CenterCrop();
     void FitXY();
-    
-    GLuint LoadShader(GLenum type, const char * shaderSrc);
-    GLuint CreateProgram(const char* vertexShader, const char* fragShader);
-    GLint PrepareDraw();
-    bool ExecuteDraw(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long verSize);
-    bool ExecuteDrawStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long verSize);
-    bool ExecuteDrawNewStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long verSize);
-    void Rotate2d(GLfloat centerX, GLfloat centerY, GLfloat* rotateX, GLfloat* rotateY, GLfloat theta);
-    bool FinishDraw();
 
 private:
     EGLNativeWindowType m_eglWindow;
@@ -100,8 +104,7 @@ private:
     int m_width;
     int m_height;
     GLfloat m_widthPercent;
-    
-//    unsigned char *buf[3] = {0};
+    unsigned char *buf[3] = {0};
     std::unique_ptr<class YuvRender> m_render = nullptr;
     std::unique_ptr<class MixRender> m_mixRender = nullptr;
     std::unique_ptr<MaskRender> m_maskRender = nullptr;

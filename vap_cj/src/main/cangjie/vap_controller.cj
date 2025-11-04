@@ -2,14 +2,13 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 package vap_cj
+import std.unicode.UnicodeStringExtension
 
-internal import ohos.base.nativeLog
-import ohos.state_macro_manage.*
 import std.convert.*
 import std.collection.*
 import std.collection.concurrent.*
-import std.sync.*
 import ohos.component.*
+import ohos.system_date_time.SystemDateTime
 
 @FastNative
 foreign {
@@ -57,6 +56,8 @@ public class GlobalLoops {
     public static var map: ConcurrentHashMap<String, VapController> = ConcurrentHashMap<String, VapController>()
 }
 
+public var map: Map<Int64, Int64> = HashMap<Int64, Int64>()
+
 @C
 struct CJInt64Array{
     var size: Int64
@@ -70,12 +71,13 @@ struct CJInt64Array{
 
 @C
 func doneFn2(): Unit {
-    Hilog.info(0, "=======VapController  doneFn 12344=========", "-----VapController--doneFn-12344")
     let that: VapController = GlobalLoops.map[loops]
     that.loops--
     if (that.loops > 0) {
+        Hilog.info(0, "VapController onStateChange", "VapController doneFn1")
         that.play(that.uri, that.mixData, doneFn)
     } else {
+        Hilog.info(0, "VapController onStateChange", "VapController doneFn2")
         that.loops = 1
         if (let Some(v) <- that.jsCbfn) {
             v()
@@ -85,12 +87,13 @@ func doneFn2(): Unit {
 }
 
 func doneFn(): Unit {
-    Hilog.info(0, "=======VapController  doneFn 12344=========", "-----VapController--doneFn-12344")
     let that: VapController = GlobalLoops.map[loops]
     that.loops--
     if (that.loops > 0) {
+        Hilog.info(0, "VapController onStateChange", "VapController doneFn3")
         that.play(that.uri, that.mixData, doneFn)
     } else {
+        Hilog.info(0, "VapController onStateChange", "VapController doneFn4")
         that.loops = 1
         if (let Some(v) <- that.jsCbfn) {
             v()
@@ -101,7 +104,7 @@ func doneFn(): Unit {
 
 @C
 func onStateChange(state: Int64, ret: Int64): Unit {
-    Hilog.info(0, "==VapController onStateChange==", "--VapController onStateChange-state: ${state}")
+    Hilog.info(0, "VapController onStateChange", "VapController onStateChange-state: ${state}")
 }
 
 public class VapController <: XComponentController{
@@ -142,6 +145,10 @@ public class VapController <: XComponentController{
 
     protected  override func onSurfaceCreated(surfaceId: String): Unit{
         unsafe {
+            if(surfaceId.isBlank()){
+                Hilog.info(0, "onSurfaceCreated surfaceId", "The surfaceId is not generated!")
+                return;
+            }
             id = Int64.parse(surfaceId)
             FFISetSurfaceId(id)
         }
@@ -149,12 +156,18 @@ public class VapController <: XComponentController{
 
     protected  override func onSurfaceChanged(surfaceId: String, rect: SurfaceRect): Unit{
         unsafe {
+            if(surfaceId.isBlank()){
+                Hilog.info(0, "onSurfaceChanged surfaceId", "The surfaceId is not generated!")
+                return;
+            }
+            Hilog.info(0, "onSurfaceChanged surfaceId", "onSurfaceChanged surfaceId:${surfaceId}")
             FFIChangeSurface(Int64.parse(surfaceId), rect.surfaceWidth, rect.surfaceHeight)
+            Hilog.info(0, "onSurfaceChanged surfaceId", "onSurfaceChanged surfaceId111")
             var mixData: ArrayList<CangjieMixData> = ArrayList<CangjieMixData>()
-            if(pageName == "NewOn"){
+            if(pageName.contains("NewOn")){
+                Hilog.info(0, "onSurfaceChanged surfaceId", "onSurfaceChanged surfaceId111")
                 setFitType(FitType.CENTER_CROP)
                 setVideoMode(VideoMode.VIDEO_MODE_SPLIT_HORIZONTAL)
-                this.newOn()
                 this.play(this.url, mixData, this.onAnimationStart1)
             }
         }
@@ -162,14 +175,14 @@ public class VapController <: XComponentController{
 
     protected  override func onSurfaceDestroyed(surfaceId: String): Unit{
         unsafe {
-            this.onAnimationStart1()
+            Hilog.info(0, "onSurfaceDestroyed FFIDestroySurface", "onSurfaceDestroyed FFIDestroySurface1")
             FFIDestroySurface(Int64.parse(surfaceId))
+            Hilog.info(0, "onSurfaceDestroyed FFIDestroySurface", "onSurfaceDestroyed FFIDestroySurface2")
         }
     }
 
     public var callback3: () -> Unit = {=>()}
     public func play(uri: String, mixData: ArrayList<CangjieMixData>, cbFn: () -> Unit) {
-        Hilog.info(0, "=======VapController  play =========", "-----VapController--play-")
         unsafe {
             let mixDatas: Array<CangjieMixData> = Array<CangjieMixData>(mixData.size,
                 repeat: CangjieMixData("", "", "", Int64(0), Int64(0), Int64(0), Int64(0), Int32(0), Int32(0)))
@@ -201,6 +214,8 @@ public class VapController <: XComponentController{
             var mixDataArray = mixData.toArray()
             this.jsCbfn = cbFn
             setGlobalLoops()
+            var startTime: Int64 = SystemDateTime.getTime(isNano: true)
+            map.add(id, startTime)
             CangjiePluginRenderPlay(cUri, cangjieData, Int64(mixDatas.size), doneFn2, id)
         }
     }

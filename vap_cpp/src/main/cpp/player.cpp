@@ -4,17 +4,16 @@
 
 #include "player.h"
 
-#include "util/log.h"
-#include "vap_callback.h"
 #include <chrono>
 #include <cstdint>
-#include <fcntl.h>
 #include <memory>
 #include <multimedia/player_framework/native_averrors.h>
+#include <fcntl.h>
 #include <mutex>
 #include <sys/stat.h>
 #include <vector>
-#include <unistd.h>
+#include "log.h"
+#include "vap_callback.h"
 
 #undef LOG_TAG
 #define LOG_TAG "player"
@@ -23,14 +22,19 @@ namespace {
 using namespace std::chrono_literals;
 }
 
-Player::~Player() {
+Player::~Player()
+{
+    LOGE("Player------1");
     callbackAll_ = nullptr;
     Stop();
+    LOGE("Player------2");
     StartRelease();
+    LOGE("Player------3");
     if(renderThread_ && renderThread_->joinable()){
+        LOGE("Player------4");
         renderThread_->join();
     }
-//    callbackRefs_.clear();
+    LOGE("Player------5");
 }
 
 static int32_t OpenFile(VAPInfo &info) {
@@ -82,8 +86,6 @@ void Player::InitControlSignal() {
     }
     sampleInfo_.frameInterval = MICROSECOND / int64_t(sampleInfo_.frameRate);
     isReleased_ = false;
-    isAudioEnd_ = false;
-    isVideoEnd_ = false;
     isStop_ = false;
     isPause_ = false;
     isVideoEndOfFile_ = false;
@@ -190,31 +192,22 @@ int32_t Player::Start() {
         Release();
         return AV_ERR_UNKNOWN;
     }
-//    CallBackJS(VapState::START, CallbackType::STATE_CHANGE);
     return AV_ERR_OK;
 }
 
 void Player::StartRelease() {
-    LOGD("StartRelease %{public}d %{public}d", isVideoEnd_.load(), isAudioEnd_.load());
-
+    LOGE("Player------888");
     std::unique_lock<std::mutex> lock(mutex_);
-    if (isReleased_)
-        return;
-
+    LOGE("Player------999");
+    if (isReleased_) return;
+    LOGE("Player------8");
     CallBackJS(VapState::COMPLETE, CallbackType::STATE_CHANGE);
     ReleaseAudio();
     Release();
-//    if (!isVideoEnd_ || !isAudioEnd_)
-//        return;
-//
-//    if (!isReleased_) {
-//        CallBackJS(VapState::COMPLETE, CallbackType::STATE_CHANGE);
-//        ReleaseAudio();
-//        Release();
-//    }
 }
 
 void Player::ReleaseAudio() {
+    LOGE("Player------11");
     if (audioRenderer_) {
         OH_AudioRenderer_Flush(audioRenderer_);
         OH_AudioRenderer_Release(audioRenderer_);
@@ -228,7 +221,7 @@ void Player::ReleaseAudio() {
         decAudioInputThread_->join();
         decAudioInputThread_.reset();
     }
-
+    
     if (decAudioOutputThread_ && decAudioOutputThread_->joinable()) {
         decAudioOutputThread_->join();
         decAudioOutputThread_.reset();
@@ -242,6 +235,7 @@ void Player::ReleaseAudio() {
         delete audioSignal_;
         audioSignal_ = nullptr;
     }
+    LOGE("Player------12");
     LOGW("Player: audio release end");
 }
 
@@ -256,11 +250,6 @@ void Player::Release() {
     }
     decOutputThread_.reset();
 
-//    if (renderThread_ && renderThread_->joinable()) {
-//        renderThread_->detach();
-//        renderThread_.reset();
-//    }
-
     if (videoDecoder_ != nullptr) {
         videoDecoder_->Release();
         videoDecoder_.reset();
@@ -274,10 +263,6 @@ void Player::Release() {
         close(sampleInfo_.inputFd);
         sampleInfo_.inputFd = -1;
     }
-    if (eglCore_ != nullptr) {
-        eglCore_->Release();
-        eglCore_.reset();
-    }
     auto emptyQueue = std::queue<std::vector<uint8_t>>();
     renderQueue_.swap(emptyQueue);
     if (signal_ != nullptr) {
@@ -286,6 +271,7 @@ void Player::Release() {
     }
 
     ResetControlSignal();
+     LOGE("Player------14");
     LOGW("Player: release end: %{public}d", loops_);
 }
 
@@ -299,11 +285,12 @@ void Player::ResetControlSignal() {
     isSetVideoMode_ = false;
     speed_ = 1.0;
     CallBackJS(VapState::DESTROY, CallbackType::STATE_CHANGE);
+    std::unique_lock<std::mutex> lock(callbackRefsMutex_);
     if (callbackRefs_.find(CallbackType::PLAY_DONE) != callbackRefs_.end() && callbackAll_) {
         CallbackContext *context = new CallbackContext;
         context->callbackRef = callbackRefs_[CallbackType::PLAY_DONE];
-//        context->env = env_;
         callbackAll_(context);
+        callbackRefs_.erase(CallbackType::PLAY_DONE);
         LOGD("play end callback");
     }
 }
@@ -329,13 +316,15 @@ void Player::InitJSAnimConfig() {
 
 void Player::RenderThread() {
     eglCore_ = std::make_unique<EGLCore>();
+    LOGD("Player: RenderThread eglContext %{public}p %{public}d, %{public}d", sampleInfo_.window,
+        sampleInfo_.width, sampleInfo_.height);
     if (isSetVideoMode_) {
         eglCore_->SetVideoMode(defaultVideoMode_);
     }
     eglCore_->SetVideoSize(sampleInfo_.videoWidth, sampleInfo_.videoHeight, sampleInfo_.codecMime);
     eglCore_->SetFitType(fitType_);
-    if (!eglCore_->EglContextInit(sampleInfo_.window, sampleInfo_.width, sampleInfo_.height, sampleInfo_.uri,
-                                  sampleInfo_.iptData)) {
+    if (!eglCore_->EglContextInit1(sampleInfo_.window, sampleInfo_.width, sampleInfo_.height, sampleInfo_.uri,
+        sampleInfo_.iptData)) {
         LOGE("Player: Unable to init eglContext");
     }
     InitJSAnimConfig();
@@ -347,39 +336,38 @@ void Player::RenderThread() {
             LOGE("Decoder render end.");
             break;
         }
-        
-        std::vector<uint8_t> buffer;
-        if(!isPause_){
-            std::unique_lock<std::mutex> lock(renderMutex_);
-            renderCond_.wait_for(lock, 300ms, [this](){
-                return !renderQueue_.empty();
-            });
-            if(renderQueue_.empty()){
-                continue;
-            }
-            buffer = renderQueue_.front();
-            renderQueue_.pop();
-            lock.unlock();
+        std::unique_lock<std::mutex> lock(renderMutex_);
+        bool condRet = renderCond_.wait_for(
+            lock, 300ms, [this]() { return !renderQueue_.empty(); });
+        if (renderQueue_.empty()) {
+            LOGE("RenderThread no data");
+            continue;
         }
-
+        std::vector<uint8_t> buffer = renderQueue_.front();
+        renderQueue_.pop();
+        lock.unlock();
         if (eglCore_) {
             renderFrameCurIdx_++;
-            LOGD("renderFrameCurIdx_: %{public}d frameCurIdx_: %{public}d", renderFrameCurIdx_, frameCurIdx_);
-
-            if (renderFrameCurIdx_ >= frameCurIdx_) {
+            LOGD("renderFrameCurIdx_1: %{public}d frameCurIdx_: %{public}d", renderFrameCurIdx_, frameCurIdx_);
+            if (renderFrameCurIdx_ < frameCurIdx_) {
+                LOGD("renderFrameCurIdx_2: %{public}d frameCurIdx_: %{public}d", renderFrameCurIdx_, frameCurIdx_);
                 continue;
             }
+            LOGD("renderFrameCurIdx_3: %{public}d frameCurIdx_: %{public}d", renderFrameCurIdx_, frameCurIdx_);
             RenderData renderData = {buffer, stride_, sliceHeight_, frameCurIdx_};
             eglCore_->Render(renderData);
             CallBackJS(VapState::RENDER, CallbackType::STATE_CHANGE);
         }
     }
     LOGW("RenderThread exit");
-//    isVideoEnd_ = true;
     if (eglCore_ != nullptr) {
+        LOGE("Player------96");
         eglCore_->Release();
+        LOGE("Player------97");
         eglCore_.reset();
+        LOGE("Player------95");
     }
+    LOGE("Player------98");
     StartRelease();
 }
 
@@ -433,7 +421,7 @@ void Player::GetBufferData(CodecBufferInfo bufferInfo) {
     uint8_t *dataPtr = reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(bufferInfo.bufferOrigin));
     buffer.assign(dataPtr, dataPtr + bufferInfo.attr.size);
     std::unique_lock<std::mutex> pauseLock(pauseMutex_);
-    pauseCond_.wait(pauseLock, [this]() { return !isPause_; });
+    pauseCond_.wait(pauseLock, [this]() { return !isPause_;});
     pauseLock.unlock();
     std::unique_lock<std::mutex> lock(renderMutex_);
     renderQueue_.push(buffer);
@@ -464,10 +452,9 @@ void Player::DecOutputThread() {
             break;
         }
 
-        signal_->outputFrameCount++;
         LOGD("Out buffer count: %{public}d, size: %{public}d, flag: %{public}u, pts: %{public}ld",
              signal_->outputFrameCount, bufferInfo.attr.size, bufferInfo.attr.flags, bufferInfo.attr.pts);
-        frameCurIdx_ = signal_->outputFrameCount;
+        frameCurIdx_ = signal_->outputFrameCount++;
         lock.unlock();
         GetBufferData(bufferInfo);
 
@@ -559,7 +546,7 @@ void Player::DecAudioOutputThread() {
         }
         GetPCMData(bufferInfo);
         lock.unlock();
-        int32_t ret = audioDecoder_->FreeOutputData(bufferInfo.bufferIndex);
+        int32_t ret = audioDecoder_->FreeOutputData(bufferInfo.bufferIndex, false);
         if (ret != AV_ERR_OK) {
             break;
         }
@@ -568,9 +555,7 @@ void Player::DecAudioOutputThread() {
             return audioSignal_->renderQueue.size() < AUDIO_CACHE * bufferInfo.attr.size;
         });
     }
-//    isAudioEnd_ = true;
     OH_AudioRenderer_Stop(audioRenderer_);
-//    StartRelease();
 }
 
 void Player::InitAudioPlayer(AudioInitData audioInitData) {
@@ -592,7 +577,8 @@ void Player::InitAudioPlayer(AudioInitData audioInitData) {
     OH_AudioStreamBuilder_GenerateRenderer(builder_, &audioRenderer_);
 }
 
-void Player::PauseAndResume() {
+void Player::PauseAndResume()
+{
     if (!isStarted_) {
         LOGD("PauseAndResume player is not start");
         return;
@@ -612,27 +598,32 @@ void Player::Stop() {
     std::lock_guard<std::mutex> lock(pauseMutex_);
     if (isPause_) {
         isPause_ = false;
+        LOGD("Player------6");
         pauseCond_.notify_all();
+        LOGD("Player------7");
     }
 }
 
 void Player::CallBackJS(VapState state, CallbackType type, int32_t err) {
+    std::unique_lock<std::mutex> lock(callbackRefsMutex_);
     if ((callbackRefs_.find(type) != callbackRefs_.end()) && callbackAll_ && isContainerDestroy_ == false) {
+        LOGE("Player------9");
         CallbackContext *context = new CallbackContext;
         context->callbackRef = callbackRefs_[type];
         context->vapState = state;
         context->err = err;
         jsAnimConfig_.currentFrame = renderFrameCurIdx_;
         context->jsAnimConfig = jsAnimConfig_;
+        LOGE("Player------10");
         callbackAll_(context);
     }
 }
-
 
 void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*callbackFn)(void *context)) {
     if(!callbackAll_ && callbackFn){
         callbackAll_ = callbackFn;
     }
+    std::unique_lock<std::mutex> lock(callbackRefsMutex_);
     auto it = callbackRefs_.find(type);
     if (it != callbackRefs_.end()) { // c侧函数为同一个 js侧回收在上层
         callbackRefs_.at(type);
@@ -641,10 +632,11 @@ void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*cal
     if(type != CallbackType::UNKNOWN){
         callbackRefs_.insert(std::make_pair(type, callbackw));
     }
-    
 }
 
-void Player::ClearCallback(CallbackType type) {
+void Player::ClearCallback(CallbackType type)
+{
+    std::unique_lock<std::mutex> lock(callbackRefsMutex_);
     auto it = callbackRefs_.find(type);
     if (it != callbackRefs_.end()) {
         callbackRefs_.erase(it);

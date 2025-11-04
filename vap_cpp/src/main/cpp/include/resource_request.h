@@ -11,8 +11,9 @@
 #include <native_drawing/drawing_types.h>
 #include <vector>
 
-#include "mix/src.h"
+#include "src.h"
 
+struct MixInputData;
 struct ColorARGB {
     uint32_t alpha = 0xff;
     uint32_t red = 0xff;
@@ -47,10 +48,10 @@ public:
     void Release();
     
     void FetchText(std::vector<uint8_t> &data, TextOption &txtOpt);
-    void FetchImg(std::vector<uint8_t> &data, ImageOption &imgOpt);
+    void FetchImg(std::vector<uint8_t> &data, ImageOption &imgOpt, const MixInputData& mixData);
 private:
-    uint64_t m_width = 300;
-    uint64_t m_height = 50;
+    uint64_t width_ = 300;
+    uint64_t height_ = 50;
 
     OH_Drawing_Bitmap *cBitmap_ = nullptr;
     OH_Drawing_Canvas *cCanvas_ = nullptr;

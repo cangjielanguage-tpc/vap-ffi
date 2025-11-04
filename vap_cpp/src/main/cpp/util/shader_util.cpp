@@ -6,6 +6,8 @@
 #include <string>
 #include "log.h"
 
+static std::unordered_map<std::string, GLuint> s_programCache;
+
 GLuint ShaderUtil::CreateProgram(const char *vertexSource, const char *fragmentSource)
 {
     LOGD("CompileShader: CreateProgram");

@@ -2,11 +2,11 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
-#include "mask/mask_config.h"
+#include "mask_config.h"
 
 MaskConfig::MaskConfig(int32_t width, int32_t height)
 {
-    m_width = width;
+    width_ = width;
     maskTexId_ = height;
 }
 

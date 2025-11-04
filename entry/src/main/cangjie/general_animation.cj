@@ -16,10 +16,7 @@ internal import ohos.state_manage.ObservedProperty
 internal import ohos.state_manage.LocalStorage
 internal import ohos.hilog.Hilog
 internal import ohos.resource_manager.*
-import ohos.ability.getStageContext
-import ohos.base.AsyncCallback
 import ohos.component.SelectOption
-import std.collection.concurrent.ConcurrentHashMap
 import std.collection.HashMap
 import ohos.component.Stack
 import ohos.component.Scroll
@@ -30,28 +27,18 @@ import ohos.state_manage.*
 import ohos.state_macro_manage.Component
 import ohos.state_macro_manage.Entry
 import ohos.state_macro_manage.State
-import ohos.component.Image
 import std.collection.ArrayList
 import ohos.component.ImageRepeat
 import ohos.component.ViewBase
-import ohos.image.Image as MultiImage
-import ohos.image.Component as ImageComponent
-import ohos.image.InitializationOptions
-import ohos.image.PixelMapFormat
-import ohos.image.PixelMap
-import ohos.image.createPixelMap
-import ohos.image.Size as UniqueImageSize
 import ohos.component.ImageSize
 import ohos.component.ScrollDirection
 import ohos.component.BorderStyle
 import ohos.component.FontWeight
 import kit.BasicServicesKit.*
-import ohos.ability.getStageContext
-import ohos.state_macro_manage.Builder
-import ohos.base.AsyncCallback
 import vap_cj.*
 import ohos.component.XComponent
 import ohos.component.XComponentType
+import std.collection.Map
 
 public class GlobalLoops {
     public static var stateComponent: HashMap<String, Bool> = HashMap<String, Bool>();
@@ -63,6 +50,8 @@ public class GeneralAnimation {
     @State
     var vapController: VapController = VapController("GeneralAnimation")
 
+    public var map: Map<String, Int64> = HashMap<String, Int64>()
+
     @State
     var fitType: FitType = FitType.FIT_CENTER
 
@@ -71,6 +60,8 @@ public class GeneralAnimation {
 
     @State
     var text: String = "fix_center"
+
+    var videoName: String = "great_gift.mp4"
 
     func viewInit() {
         println("GeneralAnimation")
@@ -90,8 +81,6 @@ public class GeneralAnimation {
     	this.vapController.stop()
     }
     protected func onPageShow() {}
-
-
 
     func build() {
         Column() {
@@ -147,14 +136,15 @@ public class GeneralAnimation {
     private func play(): Unit {
         try {
             var rootPath = globalAbilityContext.getOrThrow().resourceDir
-            var filePath = "${rootPath}/great_gift.mp4"
+            var filePath = "${rootPath}/" + videoName
             let opts: ArrayList<CangjieMixData> = ArrayList<CangjieMixData>();
             this.vapController.setFitType(this.fitType)
             this.vapController.setVideoMode(VideoMode.VIDEO_MODE_SPLIT_HORIZONTAL)
-
             this.vapController.setDownloadAttribute(50000, download)
             this.vapController.setLoop(1)
             this.buttonEnabled = false
+            var startTime = SystemDateTime.getTime(isNano: true)
+            map.add("startTime", startTime)
             this.vapController.play(filePath, opts, cbFn)
         } catch (e: Exception) {
             Hilog.error(0, "=======GeneralAnimation  play error=========", "${e.message}")
@@ -162,7 +152,6 @@ public class GeneralAnimation {
     }
 
     private func pause(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  pause =========", "pause")
         try {
             this.vapController.pause()
         } catch (e: Exception) {
@@ -171,7 +160,6 @@ public class GeneralAnimation {
     }
 
     private func stop(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  stop =========", "stop")
         try {
             this.vapController.stop()
         } catch (e: Exception) {
@@ -189,11 +177,12 @@ public class GeneralAnimation {
 
     func cbFn(): Unit {
         this.buttonEnabled = true
-        Hilog.info(0, "=======GeneralAnimation  cbFn =========", "-----GeneralAnimation--cbFn-")
-        // 触发应用侧回调
+        var endTime: Int64 = SystemDateTime.getTime(isNano: true)
+        var startTime: Int64 = map.get("startTime").getOrThrow()
+        Hilog.info(0, "GeneralAnimation  cbFn", "--GeneralAnimation--play cast: ${endTime - startTime}")
     }
 
     func download(data: DownLoadData): Unit {
-        Hilog.info(0, "=======download  DownLoadData =========", "-----download  DownLoadData-")
+        Hilog.info(0, "==download  DownLoadData ==", "--download  DownLoadData-")
     }
 }

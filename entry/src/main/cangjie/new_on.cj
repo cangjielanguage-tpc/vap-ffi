@@ -9,24 +9,11 @@ internal import ohos.state_manage.ObservedProperty
 internal import ohos.state_manage.LocalStorage
 internal import ohos.hilog.Hilog
 internal import ohos.base.*
-internal import std.sync.*
-internal import std.time.*
-import ohos.resource_manager.ResourceManager
-import ohos.ability.getStageContext
 import vap_cj.*
-import ohos.image.Image as MultiImage
-import ohos.image.Component as ImageComponent
-import ohos.image.InitializationOptions
-import ohos.image.PixelMapFormat
-import ohos.image.PixelMap
-import ohos.image.createPixelMap
-import ohos.image.Size as UniqueImageSize
 import ohos.state_macro_manage.*
 import ohos.router.*
-import ohos.color_manager.*
 import ohos.component.*
 import std.collection.ArrayList
-import ohos.prompt_action.*
 
 @Entry
 @Component
@@ -46,7 +33,6 @@ class NewOn {
         var rootPath = globalAbilityContext.getOrThrow().resourceDir
         var filePath = "${rootPath}/" + videoName
         this.vapController.setUrl(filePath)
-        println("NewOn")
     }
 
     func viewInit() {
@@ -58,7 +44,6 @@ class NewOn {
     }
 
     private func play(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  pause =========", "pause")
         try {
             this.on()
             this.vapController.setFitType(FitType.CENTER_CROP)
@@ -68,34 +53,31 @@ class NewOn {
             let opts: ArrayList<CangjieMixData> = ArrayList<CangjieMixData>();
             this.vapController.play(filePath, opts, cbFn)
         } catch (e: Exception) {
-            Hilog.error(0, "=======VAPXAnimation  pause error=========", "${e.message}")
+            Hilog.error(0, "VAPXAnimation  pause error", "VAPXAnimation  pause error message： ${e.message}")
         }
     }
 
     private func stop(): Unit {
-        Hilog.info(0, "=======GeneralAnimation  stop =========", "stop")
         try {
             this.vapController.stop()
         } catch (e: Exception) {
-            Hilog.error(0, "=======GeneralAnimation  stop =========", "${e.message}")
+            Hilog.error(0, "GeneralAnimation  stop error message", "GeneralAnimation  stop error message：${e.message}")
         }
     }
 
     private func pause(): Unit {
-        Hilog.info(0, "=======GeneralAnimation  pause =========", "pause")
         try {
             this.vapController.pause()
         } catch (e: Exception) {
-            Hilog.error(0, "=======GeneralAnimation  pause =========", "${e.message}")
+            Hilog.error(0, "GeneralAnimation pause error message", "error message： ${e.message}")
         }
     }
 
     private func on(): Unit {
-        Hilog.info(0, "=======GeneralAnimation  pause =========", "pause")
         try {
             this.vapController.on("stateChange", callbackOn)
         } catch (e: Exception) {
-            Hilog.error(0, "=======GeneralAnimation  pause =========", "${e.message}")
+            Hilog.error(0, "GeneralAnimation  pause  error message", " error message： ${e.message}")
         }
     }
 
@@ -126,23 +108,6 @@ class NewOn {
                 } else {
                     XComponent(id: 'vap_xcomponentId_newOn', `type`: XComponentType.SURFACE, controller: vapController)
                     .width(100.percent).height(90.percent).backgroundColor(Color.TRANSPARENT)
-
-                    Row(){
-                        Button("Skip")
-                        .fontWeight(FontWeight.Normal)
-                        .onClick(
-                            {
-                                =>
-                                this.stop()
-                                this.showVideo = false
-                              //  this.vapPlayer = None 必须，建议使用之前的visibility控制显示 容器都没了，还能调用方法！！！
-                            }
-                        )
-                        .borderRadius(4)
-                        .height(5.percent)
-                        .width(20.percent)
-                    }.width(100.percent).margin(top:15.px, right: 10.px, bottom: 15.px, left: 10.px)
-                    .justifyContent(FlexAlign.SpaceAround).alignItems(VerticalAlign.Bottom)
                 }
             }.width(100.percent).height(100.percent).backgroundImage(src: @r(app.media.bg), repeat: ImageRepeat.XY)
             .backgroundImageSize(ImageSize.FILL)

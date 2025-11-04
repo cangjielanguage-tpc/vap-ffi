@@ -3,6 +3,7 @@
  */
 
 #include "vap_callback.h"
+#include "log.h"
 
 namespace {
 constexpr int LIMIT_LOGD_FREQUENCY = 50;
@@ -16,26 +17,31 @@ int32_t VAPCallback::OnRenderWriteData(OH_AudioRenderer *renderer, void *userDat
         return 1;
     }
     (void)renderer;
-    (void)length;
     ADecSignal *codecUserData = static_cast<ADecSignal *>(userData);
-    
-    // 将待播放的数据，按length长度写入buffer
     uint8_t *dest = (uint8_t *)buffer;
     size_t index = 0;
     std::unique_lock<std::mutex> lock(codecUserData->audioOutputMutex);
-    // 从队列中取出需要播放的长度为length的数据
-    while (!codecUserData->renderQueue.empty() && index < length) {
-        dest[index++] = codecUserData->renderQueue.front();
-        codecUserData->renderQueue.pop();
+    
+    // 优化：计算可拷贝的最大长度，批量拷贝（需确保队列底层是连续内存，如std::deque）
+    size_t copySize = std::min((size_t)length, codecUserData->renderQueue.size());
+    if (copySize > 0) {
+        // 若使用std::deque，可通过地址连续的一段数据直接拷贝
+        memcpy(dest, &codecUserData->renderQueue.front(), copySize);
+        index = copySize;
+        // 批量弹出已拷贝数据
+        for (size_t i = 0; i < copySize; ++i) {
+            codecUserData->renderQueue.pop();
+        }
     }
-    LOGD("render BufferLength:%{public}d, renderQueue.size: %{public}lu "
-         "renderReadSize: %{public}lu",
+    
+    LOGD("render BufferLength:%{public}d, renderQueue.size: %{public}lu, renderReadSize: %{public}lu",
          length, codecUserData->renderQueue.size(), index);
-    if (codecUserData->renderQueue.size() < length) {
+    if (codecUserData->renderQueue.size() < (size_t)length) {
         codecUserData->renderCond.notify_all();
     }
     return 0;
 }
+
 // 自定义音频流事件函数
 int32_t VAPCallback::OnRenderStreamEvent(OH_AudioRenderer *renderer, void *userData, OH_AudioStream_Event event)
 {

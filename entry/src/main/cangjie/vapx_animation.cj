@@ -13,14 +13,9 @@ internal import ohos.state_manage.SubscriberManager
 internal import ohos.state_manage.ObservedProperty
 internal import ohos.state_manage.LocalStorage
 internal import ohos.hilog.Hilog
-internal import ohos.resource_manager.ResourceManager
 internal import std.convert.*
-internal import ohos.ability.getStageContext
-internal import ohos.base.AsyncCallback
 internal import ohos.component.SelectOption
-import std.collection.concurrent.ConcurrentHashMap
 import vap_cj.*
-import std.collection.HashMap
 import ohos.component.Stack
 import ohos.component.Scroll
 import ohos.component.Select
@@ -30,19 +25,11 @@ import ohos.state_manage.*
 import ohos.state_macro_manage.Component
 import ohos.state_macro_manage.Entry
 import ohos.state_macro_manage.State
-import ohos.component.Image
 import ohos.component.XComponent
 import ohos.component.XComponentType
 import std.collection.ArrayList
 import ohos.component.ImageRepeat
 import ohos.component.ViewBase
-import ohos.image.Image as MultiImage
-import ohos.image.Component as ImageComponent
-import ohos.image.InitializationOptions
-import ohos.image.PixelMapFormat
-import ohos.image.PixelMap
-import ohos.image.createPixelMap
-import ohos.image.Size as UniqueImageSize
 import ohos.component.ImageSize
 import ohos.component.ScrollDirection
 import ohos.component.BorderStyle
@@ -71,6 +58,8 @@ public class VAPXAnimation {
 
     @State
     var text: String = "fix_center"
+
+    var videoName: String = "demo.mp4";
 
     @State
     var colorText: String = "red"
@@ -262,10 +251,9 @@ public class VAPXAnimation {
 
     private func play(): Unit {
         Hilog.info(0, "=======VAPXAnimation  play =========", "play")
-
         try {
             var rootPath = globalAbilityContext.getOrThrow().resourceDir
-            var filePath = "${rootPath}/123.mp4"
+            var filePath = "${rootPath}/" + videoName
             this.srcInfo = this.vapController.getVideoInfo(filePath)
             this.vapController.setFitType(this.fitType)
             let mixDatas: Array<CangjieMixData> = []

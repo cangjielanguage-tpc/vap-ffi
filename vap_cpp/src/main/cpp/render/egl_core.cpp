@@ -3,27 +3,24 @@
  */
 
 #include "egl_core.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <misc/fastrpc.h>
+#include <cstdio>
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <EGL/eglplatform.h>
 #include <GLES3/gl3.h>
-#include <cmath>
-#include <cstdio>
 #include <hilog/log.h>
-#include "../common/common.h"
-#include "plugin_render.h"
-#include <cstddef>
-#include <memory>
 #include <fstream>
 #include <vector>
+
+#include "common/common.h"
 #include "mask_config.h"
 #include "mask_render.h"
-#include "util/log.h"
-#include <cstdint>
-#include <misc/fastrpc.h>
 #include "common_const.h"
-
-#define OHOSCHARPTR char*
 
 using namespace CommonConst;
 constexpr int32_t NUM_4 = 4;
@@ -191,7 +188,7 @@ const EGLint CONTEXT_ATTRIBS[] = {
 bool EGLCore::EglContextInit(void* window)
 {
     OH_LOG_Print(LOG_APP, LOG_INFO, LOG_PRINT_DOMAIN, "EGLCore", "EglContextInit execute");
-    m_eglWindow = static_cast<EGLNativeWindowType>(window);
+    m_eglWindow  = static_cast<EGLNativeWindowType>(window);
 
     // Init display.
     m_eglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -215,10 +212,11 @@ bool EGLCore::EglContextInit(void* window)
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "eglChooseConfig: unable to choose configs");
         return false;
     }
+
     return CreateEnvironment();
 }
 
-bool EGLCore::EglContextInit(EGLNativeWindowType window, int width, int height, std::string uri,
+bool EGLCore::EglContextInit1(EGLNativeWindowType window, int width, int height, std::string uri,
     std::map<std::string, MixInputData> &iptData)
 {
     LOGD("EglContextInit execute");
@@ -229,14 +227,14 @@ bool EGLCore::EglContextInit(EGLNativeWindowType window, int width, int height, 
 
     m_width = width;
     m_height = height;
-
+    
     m_animConfig = std::make_shared<AnimConfig>();
     m_animConfig->defaultVideoMode = m_defaultVideoMode;
     if (m_animConfig->isDefaultConfig || m_animConfig->ParseJson(uri) == false) {
         m_animConfig->DefaultConfig(m_videoWidth, m_videoHeight);
     }
     InitFitConfig();
-
+    
     if (0 < m_width) {
         m_widthPercent = FIFTY_PERCENT * m_height / m_width;
     }
@@ -274,6 +272,41 @@ bool EGLCore::EglContextInit(EGLNativeWindowType window, int width, int height, 
     return ret;
 }
 
+EGLConfig EGLCore::ChooseConfig()
+{
+    std::vector<int> attribList;
+    GetAttributes(attribList);
+    EGLConfig configs = nullptr;
+    int configsNum;
+
+    if (!eglChooseConfig(m_eglDisplay, attribList.data(), &configs, 1, &configsNum)) {
+        LOGE("eglChooseConfig: unable to choose configs");
+        return nullptr;
+    }
+    return configs;
+}
+
+void EGLCore::GetAttributes(std::vector<int> &array)
+{
+    array = {
+        EGL_RENDERABLE_TYPE,
+        EGL_OPENGL_ES2_BIT,
+        // 指定渲染api类别
+        EGL_RED_SIZE,
+        8,
+        EGL_GREEN_SIZE,
+        8, EGL_BLUE_SIZE,
+        8,
+        EGL_ALPHA_SIZE,
+        8,
+        EGL_DEPTH_SIZE,
+        0,
+        EGL_STENCIL_SIZE,
+        0,
+        EGL_NONE
+    };
+}
+
 bool EGLCore::CreateEnvironment()
 {
     // Create surface.
@@ -281,8 +314,8 @@ bool EGLCore::CreateEnvironment()
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "eglWindow_ is null");
         return false;
     }
+    
     if (m_eglDisplay == EGL_NO_DISPLAY || m_eglConfig == nullptr) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "m_eglDisplay is null");
         return false;
     }
     
@@ -293,38 +326,47 @@ bool EGLCore::CreateEnvironment()
         return false;
     }
     // Create context.
-    m_eglContext = eglCreateContext(m_eglDisplay, m_eglConfig, EGL_NO_CONTEXT, CONTEXT_ATTRIBS);
+    m_eglContext = CreateContext(m_eglDisplay, m_eglConfig);
     if (!eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext)) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "eglMakeCurrent failed");
         return false;
     }
     // Create program.
-    m_program = CreateProgram(VERTEX_SHADER, FRAGMENT_SHADER);
-    if (m_program == PROGRAM_ERROR) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "CreateProgram: unable to create program");
-        return false;
-    }
+//    program_ = CreateProgram(VERTEX_SHADER, FRAGMENT_SHADER);
+//    if (program_ == PROGRAM_ERROR) {
+//        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "CreateProgram: unable to create program");
+//        return false;
+//    }
     return true;
+}
+
+EGLContext EGLCore::CreateContext(EGLDisplay eglDisplay, EGLConfig eglConfig)
+{
+    std::vector<EGLint> attrs = {EGL_CONTEXT_CLIENT_VERSION, TWO, EGL_NONE};
+    EGLContext eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, attrs.data());
+    return eglContext;
 }
 
 void EGLCore::Background()
 {
     GLint position = PrepareDraw();
+    LOGD("Player------10003");
     if (position == POSITION_ERROR) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "Background get position failed");
         return;
     }
-
+    LOGD("Player------10004");
     if (!ExecuteDraw(position, BACKGROUND_COLOR,
                      BACKGROUND_RECTANGLE_VERTICES, sizeof(BACKGROUND_RECTANGLE_VERTICES))) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "Background execute draw failed");
         return;
     }
-
+    LOGD("Player------10005");
     if (!FinishDraw()) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "Background FinishDraw failed");
         return;
     }
+    LOGD("Player------10006");
 }
 
 void EGLCore::Draw(int& hasDraw)
@@ -356,8 +398,8 @@ void EGLCore::Draw(int& hasDraw)
     GLfloat rightX = rotateY * (M_PI / 180 * 18);
     GLfloat rightY = 0;
 
-    const GLfloat shapeVertices[] = { centerX / m_width, centerY / m_height, leftX / m_width, leftY / m_height,
-        rotateX / m_width, rotateY / m_height, rightX / m_width, rightY / m_height };
+    const GLfloat shapeVertices[] = { centerX / m_width, centerY / m_height, leftX / m_height, leftY / m_height,
+        rotateX / m_height, rotateY / m_height, rightX / m_height, rightY / m_height };
 
     if (!ExecuteDrawStar(position, DRAW_COLOR, shapeVertices, sizeof(shapeVertices))) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "Draw execute draw shape failed");
@@ -453,17 +495,18 @@ void EGLCore::ChangeColor(int& hasChangeColor)
 
 GLint EGLCore::PrepareDraw()
 {
-    if ((m_eglDisplay == nullptr) || (m_eglSurface == nullptr) || (m_eglContext == nullptr) ||
-        (!eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext))) {
-        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "PrepareDraw: param error");
-        return POSITION_ERROR;
-    }
+//    if ((m_eglDisplay == nullptr) || (m_eglSurface == nullptr) || (m_eglContext == nullptr) ||
+//        (!eglMakeCurrent(m_eglDisplay, m_eglSurface, m_eglSurface, m_eglContext))) {
+//        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "PrepareDraw: param error");
+//        return POSITION_ERROR;
+//    }
 
     // The gl function has no return value.
     glViewport(DEFAULT_X_POSITION, DEFAULT_Y_POSITION, m_width, m_height);
     glClearColor(GL_RED_DEFAULT, GL_GREEN_DEFAULT, GL_BLUE_DEFAULT, GL_ALPHA_DEFAULT);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(m_program);
+
     return glGetAttribLocation(m_program, POSITION_NAME);
 }
 
@@ -568,13 +611,14 @@ GLuint EGLCore::LoadShader(GLenum type, const char* shaderSrc)
         glDeleteShader(shader);
         return PROGRAM_ERROR;
     }
-    std::string newInfoLog;
-    newInfoLog.reserve(infoLen + 1);
-    if (newInfoLog != "") {
-        std::fill_n(newInfoLog.data(), 0, infoLen + 1);
-        glGetShaderInfoLog(shader, infoLen, nullptr, newInfoLog.data());
-        free(newInfoLog.data());
-        newInfoLog = nullptr;
+
+    char* infoLog = (char*)malloc(sizeof(char) * (infoLen + 1));
+    if (infoLog != nullptr) {
+        memset(infoLog, 0, infoLen + 1);
+        glGetShaderInfoLog(shader, infoLen, nullptr, infoLog);
+        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "glCompileShader error = %s", infoLog);
+        free(infoLog);
+        infoLog = nullptr;
     }
     glDeleteShader(shader);
     return PROGRAM_ERROR;
@@ -625,12 +669,12 @@ GLuint EGLCore::CreateProgram(const char* vertexShader, const char* fragShader)
     GLint infoLen = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
-        std::string newInfoLog;
-        newInfoLog.reserve(infoLen + 1);
-        std::fill_n(newInfoLog.data(), 0, infoLen + 1);
-        glGetProgramInfoLog(program, infoLen, nullptr, newInfoLog.data());
-        free(newInfoLog.data());
-        newInfoLog = nullptr;
+        char* infoLog = (char*)malloc(sizeof(char) * (infoLen + 1));
+        memset(infoLog, 0, infoLen + 1);
+        glGetProgramInfoLog(program, infoLen, nullptr, infoLog);
+        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "glLinkProgram error = %s", infoLog);
+        free(infoLog);
+        infoLog = nullptr;
     }
     glDeleteShader(vertex);
     glDeleteShader(fragment);
@@ -638,14 +682,51 @@ GLuint EGLCore::CreateProgram(const char* vertexShader, const char* fragShader)
     return PROGRAM_ERROR;
 }
 
-void EGLCore::UpdateSize(int width, int height)
-{
-    m_width = width;
-    m_height = height;
-//    if (width > 0) {
-//        m_widthPercent = FIFTY_PERCENT * height / width;
+//void EGLCore::UpdateSize(int width, int height)
+//{
+//    m_width = width;
+//    m_height = height;
+//    if (m_width > 0) {
+//        m_widthPercent = FIFTY_PERCENT * m_height / m_width;
 //    }
+//    LOGD("enter UpdateSize %{public}d * %{public}d ", width, height);
+//    InitFitConfig();
+//}
+
+void EGLCore::InitFitConfig()
+{
+    if (m_fitType == VideoFitType::FIT_CENTER) {
+        FitCenter();
+    } else if (m_fitType == VideoFitType::CENTER_CROP) {
+        CenterCrop();
+    } else {
+        FitXY();
+    }
+    LOGD("InitFitConfig %{public}d viewport %{public}d %{public}d %{public}d %{public}d", m_fitType,
+        m_viewportWidth, m_viewportHeight, m_viewportX, m_viewportY);
 }
+
+//void EGLCore::Release()
+//{
+//    m_render->ClearFrame();
+//    FinishLoad();
+//    m_render->ReleaseTexture();
+//    if ((nullptr == m_eglDisplay) || (nullptr == m_eglSurface) || (!eglDestroySurface(m_eglDisplay, m_eglSurface))) {
+//        LOGE("Release eglDestroySurface failed");
+//    }
+//
+//    if ((eglDisplay_ == nullptr) || (eglContext_ == nullptr) || (!eglDestroyContext(m_eglDisplay, m_eglContext))) {
+//        OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "Release eglDestroyContext failed");
+//    }
+//    
+//    if ((nullptr == m_eglDisplay) || !eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+//        LOGE("eglMakeCurrent failed");
+//    }
+//
+//    if ((nullptr == m_eglDisplay) || (!eglTerminate(m_eglDisplay))) {
+//        LOGE("Release eglTerminate failed");
+//    }
+//}
 
 void EGLCore::Release()
 {
@@ -659,8 +740,8 @@ void EGLCore::Release()
     if ((nullptr == m_eglDisplay) || (nullptr == m_eglContext) || (!eglDestroyContext(m_eglDisplay, m_eglContext))) {
         LOGE("Release eglDestroyContext failed");
     }
-    
-    if ((nullptr == m_eglDisplay) || (!eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT))) {
+
+    if ((nullptr == m_eglDisplay) || !eglMakeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
         LOGE("eglMakeCurrent failed");
     }
 
@@ -694,40 +775,67 @@ void addVecData(std::vector<unsigned char> &data, T &&value)
     data.emplace_back(std::forward<T>(value));
 }
 
-bool EGLCore::SeparateYUV(const std::vector<uint8_t> &dataVec,
-    int alignWidth, int alignHeight, int videoWidth, int videoHeight)
-{
+bool EGLCore::SeparateYUV(const std::vector<uint8_t>& dataVec,
+                          int alignWidth, int alignHeight, int videoWidth, int videoHeight) {
+    // 提前计算各分量数据大小并预留空间（避免多次扩容）
+    const size_t ySize = static_cast<size_t>(videoWidth) * videoHeight;
+    const size_t uvSize = ySize / 4; // YUV420格式，U/V分量大小为Y的1/4
     std::vector<unsigned char> data_y;
     std::vector<unsigned char> data_u;
     std::vector<unsigned char> data_v;
-    data_y.reserve(videoWidth * videoHeight);
-    data_u.reserve(videoWidth * videoHeight / FOUR);
-    data_v.reserve(videoWidth * videoHeight / FOUR);
-    
-    const uint8_t *data = dataVec.data();
+    data_y.reserve(ySize);
+    data_u.reserve(uvSize);
+    data_v.reserve(uvSize);
 
-    for (int j = 0; j < alignHeight; j++) {
-        if (alignHeight != videoHeight && j >= videoHeight)
-            break;
-        std::vector<unsigned char> oneLine;
-        oneLine.assign(data + alignWidth * j, data + alignWidth * j + videoWidth);
-        data_y.insert(data_y.end(), oneLine.begin(), oneLine.end());
+    const uint8_t* data = dataVec.data();
+    if (data == nullptr) {
+        LOGE("SeparateYUV: input data is null");
+        return false;
     }
-    for (int j = 0; j < videoHeight / TWO; j++) {
-        std::vector<uint8_t> oneLine;
-        oneLine.assign(data + alignWidth * alignHeight + alignWidth * j,
-            data + alignWidth * alignHeight + alignWidth * j + videoWidth);
-        if ((oneLine.size() % TWO) != 0) {
-            LOGE("error uv data");
-            break;
-        }
-        for (int k = 0; k < oneLine.size(); k += TWO) {
-            addVecData(data_u, std::move(oneLine[k]));
-            addVecData(data_v, std::move(oneLine[k + 1]));
+
+    // 提取Y分量（避免临时vector，直接拷贝有效数据）
+    const int yRowCount = std::min(alignHeight, videoHeight); // 避免越界循环
+    for (int j = 0; j < yRowCount; ++j) {
+        const uint8_t* yRowStart = data + static_cast<size_t>(alignWidth) * j;
+        // 直接拷贝当前行的有效数据（videoWidth长度）到data_y
+        data_y.insert(data_y.end(), yRowStart, yRowStart + videoWidth);
+    }
+
+    // 校验Y分量大小是否正确（增强健壮性）
+    if (data_y.size() != ySize) {
+        LOGE("SeparateYUV: Y data size mismatch, expected %zu, got %zu", ySize, data_y.size());
+        return false;
+    }
+
+    // 提取U/V分量（跳过Y分量区域，直接操作原始数据指针）
+    const uint8_t* uvDataStart = data + static_cast<size_t>(alignWidth) * alignHeight;
+    const int uvRowCount = videoHeight / 2;
+    for (int j = 0; j < uvRowCount; ++j) {
+        const uint8_t* uvRowStart = uvDataStart + static_cast<size_t>(alignWidth) * j;
+        // 每行有效数据长度为videoWidth（U/V交替存储，共videoWidth字节）
+        const int validUvLength = videoWidth;
+        const uint8_t* uvRowEnd = uvRowStart + validUvLength;
+
+        // 直接遍历当前行的U/V数据，避免临时vector
+        for (const uint8_t* p = uvRowStart; p < uvRowEnd; p += 2) {
+            if (p + 1 >= uvRowEnd) { // 避免最后一个字节越界
+                LOGE("SeparateYUV: invalid UV data at row %d", j);
+                return false;
+            }
+            data_u.push_back(*p);         // U分量（偶数位置）
+            data_v.push_back(*(p + 1));   // V分量（奇数位置）
         }
     }
-    m_render->SetYUVData(m_animConfig->videoWidth,
-        m_animConfig->videoHeight, data_y, data_u, data_v);
+
+    // 校验U/V分量大小是否正确
+    if (data_u.size() != uvSize || data_v.size() != uvSize) {
+        LOGE("SeparateYUV: UV data size mismatch, expected %zu, got U=%zu, V=%zu",
+             uvSize, data_u.size(), data_v.size());
+        return false;
+    }
+
+    // 传递分离后的YUV数据给渲染器
+    m_render->SetYUVData(m_animConfig->videoWidth, m_animConfig->videoHeight, data_y, data_u, data_v);
     return true;
 }
 
@@ -747,87 +855,73 @@ static bool calClick(int32_t x, int32_t y, PointRect frame)
         && y >= frame.y && y <= (frame.y + frame.h);
 }
 
-void EGLCore::GetCurrentClickTxt(int32_t eventX, int32_t eventY, std::string &clickRes)
-{
-    if (!m_mixRender || !m_mixRender->haveSrc) {
-        LOGE("no src,  not have mix render");
-        return;
-    }
-    int32_t viewWith = m_width;
-    int32_t viewHeight = m_height;
-    int32_t videoWith = m_animConfig->width;
-    int32_t videoHeight = m_animConfig->height;
+//void EGLCore::GetCurrentClickTxt(int32_t eventX, int32_t eventY, std::string &clickRes)
+//{
+//    if (!m_mixRender || !m_mixRender->haveSrc) {
+//        LOGE("no src,  not have mix render");
+//        return;
+//    }
+//    int32_t viewWith = m_width;
+//    int32_t viewHeight = m_height;
+//    int32_t videoWith = m_animConfig->width;
+//    int32_t videoHeight = m_animConfig->height;
+//
+//    if (viewWith == 0 || viewHeight == 0)
+//        return;
+//    
+//    int32_t x = eventX * videoWith / viewWith;
+//    int32_t y = eventY * videoHeight / viewHeight;
+//    
+//    auto frameIt = m_animConfig->frameAllPtr->frameAll.find(m_frameCurIdx);
+//    if (frameIt == m_animConfig->frameAllPtr->frameAll.end()) {
+//        LOGE("not find frame");
+//        return;
+//    }
+//    size_t perFrameSize = frameIt->second.frames.size();
+//    for (int i = 0; i < perFrameSize; i++) {
+//        Frame frame = frameIt->second.frames.at(i);
+//        std::string srcId = frame.srcId;
+//        auto it = m_animConfig->srcMapPtr->srcSMap.find(srcId);
+//        if (it != m_animConfig->srcMapPtr->srcSMap.end()) {
+//            // 找到了指定key的元素
+//            bool cal = calClick(x, y, frame.frame);
+//            Src src = it->second;
+//            if (cal) {
+//                clickRes = src.txt;
+//                break;
+//            }
+//            LOGD("cal click :%{public}d * %{public}d  cal :%{public}d txt: %{public}s", x, y, cal, src.txt.c_str());
+//        }
+//    }
+//}
 
-    if (viewWith == 0 || viewHeight == 0)
-        return;
-    
-    int32_t x = eventX * videoWith / viewWith;
-    int32_t y = eventY * videoHeight / viewHeight;
-    
-    auto frameIt = m_animConfig->frameAllPtr->frameAll.find(m_frameCurIdx);
-    if (frameIt == m_animConfig->frameAllPtr->frameAll.end()) {
-        LOGE("not find frame");
-        return;
-    }
-    size_t perFrameSize = frameIt->second.frames.size();
-    for (int i = 0; i < perFrameSize; i++) {
-        Frame frame = frameIt->second.frames.at(i);
-        std::string srcId = frame.srcId;
-        auto it = m_animConfig->srcMapPtr->srcSMap.find(srcId);
-        if (it != m_animConfig->srcMapPtr->srcSMap.end()) {
-            // 找到了指定key的元素
-            bool cal = calClick(x, y, frame.frame);
-            Src src = it->second;
-            if (cal) {
-                clickRes = src.txt;
-                break;
-            }
-            LOGD("cal click :%{public}d * %{public}d  cal :%{public}d txt: %{public}s", x, y, cal, src.txt.c_str());
-        }
-    }
-}
+//void EGLCore::GetAttributes(std::vector<int> &array)
+//{
+//    array = {
+//        EGL_RENDERABLE_TYPE,
+//        EGL_OPENGL_ES2_BIT,
+//        // 指定渲染api类别
+//        EGL_RED_SIZE,
+//        8,
+//        EGL_GREEN_SIZE,
+//        8, EGL_BLUE_SIZE,
+//        8,
+//        EGL_ALPHA_SIZE,
+//        8,
+//        EGL_DEPTH_SIZE,
+//        0,
+//        EGL_STENCIL_SIZE,
+//        0,
+//        EGL_NONE
+//    };
+//}
 
-EGLConfig EGLCore::ChooseConfig()
-{
-    std::vector<int> attribList;
-    GetAttributes(attribList);
-    EGLConfig configs = nullptr;
-    int configsNum;
-
-    if (!eglChooseConfig(m_eglDisplay, attribList.data(), &configs, 1, &configsNum)) {
-        LOGE("eglChooseConfig: unable to choose configs");
-        return nullptr;
-    }
-    return configs;
-}
-
-void EGLCore::GetAttributes(std::vector<int> &array)
-{
-    array = {
-        EGL_RENDERABLE_TYPE,
-        EGL_OPENGL_ES2_BIT,
-        // 指定渲染api类别
-        EGL_RED_SIZE,
-        8,
-        EGL_GREEN_SIZE,
-        8, EGL_BLUE_SIZE,
-        8,
-        EGL_ALPHA_SIZE,
-        8,
-        EGL_DEPTH_SIZE,
-        0,
-        EGL_STENCIL_SIZE,
-        0,
-        EGL_NONE
-    };
-}
-
-EGLContext EGLCore::CreateContext(EGLDisplay eglDisplay, EGLConfig eglConfig)
-{
-    std::vector<EGLint> attrs = {EGL_CONTEXT_CLIENT_VERSION, TWO, EGL_NONE};
-    EGLContext eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, attrs.data());
-    return eglContext;
-}
+//EGLContext EGLCore::CreateContext(EGLDisplay eglDisplay, EGLConfig eglConfig)
+//{
+//    std::vector<EGLint> attrs = {EGL_CONTEXT_CLIENT_VERSION, TWO, EGL_NONE};
+//    EGLContext eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, attrs.data());
+//    return eglContext;
+//}
 
 void EGLCore::MixRenderFrame(int32_t frameCurIdx)
 {
@@ -862,20 +956,6 @@ void EGLCore::MixRenderFrame(int32_t frameCurIdx)
             LOGE("not find key :%{public}s", srcId.c_str());
         }
     }
-}
-
-void EGLCore::InitFitConfig()
-{
-    if (m_fitType == VideoFitType::FIT_CENTER) {
-        FitCenter();
-    } else if (m_fitType == VideoFitType::CENTER_CROP) {
-        CenterCrop();
-    } else {
-        FitXY();
-    }
-    
-    LOGD("InitFitConfig %{public}d viewport %{public}d %{public}d %{public}d %{public}d", m_fitType,
-        m_viewportWidth, m_viewportHeight, m_viewportX, m_viewportY);
 }
 
 void EGLCore::FitCenter()
@@ -929,12 +1009,12 @@ void EGLCore::CenterCrop()
     // 计算图像和目标区域的宽高比
     double ratioImage = 1.0 * width / height;
     double ratioTarget = 1.0 * m_width / m_height;
-    
+
     // 计算缩放后的图像尺寸
     int32_t newWidth;
     int32_t newHeight;
 
-    if (ratioImage < ratioTarget) {
+     if (ratioImage < ratioTarget) {
         newWidth = m_width;
         newHeight = 1.0 * m_width / ratioImage;
     } else {

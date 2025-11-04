@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include "common_const.h"
+#include "log.h"
 #include "anim_config.h"
 
 using namespace CommonConst;
@@ -74,6 +75,8 @@ bool AnimConfig::ParseJson(std::string uri, bool isNeedParseFrame)
     }
     std::string strJson;
     json jsonObj;
+    LOGD("AnimConfig::String2Json failed， uri: %{public}s", uri.c_str());
+//    LOGD("AnimConfig::String2Json failed， GetJson uri: %{public}ld", GetJson(strJson, uri));
     if (GetJson(strJson, uri) == NEGATIVE_ONE) {
         LOGE("AnimConfig::String2Json failed");
         return false;

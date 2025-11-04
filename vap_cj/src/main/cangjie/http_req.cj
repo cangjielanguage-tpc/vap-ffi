@@ -34,8 +34,6 @@ public class DownloadFile {
                 if (let Some(r) <- resp) {
                     Hilog.error(0, "DownloadFile downloadFile resp", "${r}")
                     let data = r.result as Array<UInt8>
-//                    writeFile(filePath, data)   TODO
-//                    return filePath
                 } else {
                     Hilog.error(0, "DownloadFile downloadFile resp is none", "resp is none")
                 }
