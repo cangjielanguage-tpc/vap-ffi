@@ -2,8 +2,8 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
+#include <log.h>
 #include "demuxer.h"
-#include "log.h"
 #define OHOSCHARPTR char*
 
 Demuxer::~Demuxer()
@@ -56,7 +56,6 @@ int32_t Demuxer::GetTrackInfo(std::shared_ptr<OH_AVFormat> sourceFormat, VAPInfo
             OH_AVFormat_GetLongValue(trackFormat.get(), OH_MD_KEY_BITRATE, &info.bitrate);
             OH_AVFormat_GetIntValue(trackFormat.get(), "video_is_hdr_vivid", &info.isHDRVivid);
             OH_AVFormat_GetIntValue(trackFormat.get(), OH_MD_KEY_ROTATION, &info.rotation);
-//            char *codecMime;
             OHOSCHARPTR codecMime;
             OH_AVFormat_GetStringValue(trackFormat.get(), OH_MD_KEY_CODEC_MIME, const_cast<char const **>(&codecMime));
             info.codecMime = codecMime;
@@ -73,7 +72,6 @@ int32_t Demuxer::GetTrackInfo(std::shared_ptr<OH_AVFormat> sourceFormat, VAPInfo
             OH_AVFormat_GetIntValue(trackFormat.get(),
                 OH_MD_KEY_AUD_CHANNEL_COUNT, reinterpret_cast<int32_t *>(&info.channelCount));
 
-//            char *audioCodecMime;
             OHOSCHARPTR audioCodecMime;
             OH_AVFormat_GetStringValue(trackFormat.get(),
                 OH_MD_KEY_CODEC_MIME, const_cast<char const **>(&audioCodecMime));

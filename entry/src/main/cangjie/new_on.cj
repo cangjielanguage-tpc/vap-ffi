@@ -9,24 +9,11 @@ internal import ohos.state_manage.ObservedProperty
 internal import ohos.state_manage.LocalStorage
 internal import ohos.hilog.Hilog
 internal import ohos.base.*
-internal import std.sync.*
-internal import std.time.*
-import ohos.resource_manager.ResourceManager
-import ohos.ability.getStageContext
 import vap_cj.*
-import ohos.image.Image as MultiImage
-import ohos.image.Component as ImageComponent
-import ohos.image.InitializationOptions
-import ohos.image.PixelMapFormat
-import ohos.image.PixelMap
-import ohos.image.createPixelMap
-import ohos.image.Size as UniqueImageSize
 import ohos.state_macro_manage.*
 import ohos.router.*
-import ohos.color_manager.*
 import ohos.component.*
 import std.collection.ArrayList
-import ohos.prompt_action.*
 
 @Entry
 @Component
@@ -58,7 +45,6 @@ class NewOn {
     }
 
     private func play(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  pause =========", "pause")
         try {
             this.on()
             this.vapController.setFitType(FitType.CENTER_CROP)
@@ -73,7 +59,6 @@ class NewOn {
     }
 
     private func stop(): Unit {
-        Hilog.info(0, "=======GeneralAnimation  stop =========", "stop")
         try {
             this.vapController.stop()
         } catch (e: Exception) {
@@ -82,7 +67,6 @@ class NewOn {
     }
 
     private func pause(): Unit {
-        Hilog.info(0, "=======GeneralAnimation  pause =========", "pause")
         try {
             this.vapController.pause()
         } catch (e: Exception) {
@@ -91,7 +75,6 @@ class NewOn {
     }
 
     private func on(): Unit {
-        Hilog.info(0, "=======GeneralAnimation  pause =========", "pause")
         try {
             this.vapController.on("stateChange", callbackOn)
         } catch (e: Exception) {
@@ -135,7 +118,6 @@ class NewOn {
                                 =>
                                 this.stop()
                                 this.showVideo = false
-                              //  this.vapPlayer = None 必须，建议使用之前的visibility控制显示 容器都没了，还能调用方法！！！
                             }
                         )
                         .borderRadius(4)

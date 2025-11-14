@@ -9,7 +9,6 @@
 #include <string>
 
 #include <nlohmann/json.hpp>
-#include "log.h"
 
 enum class SrcType {
     UNKNOWN,

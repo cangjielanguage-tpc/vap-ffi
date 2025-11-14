@@ -99,7 +99,6 @@ int32_t VideoDecoder::Config(const VAPInfo &info, VDecSignal *signal)
             return AV_ERR_UNKNOWN;
         }
     }
-
     return AV_ERR_OK;
 }
 
@@ -109,7 +108,7 @@ int32_t VideoDecoder::StartVideoDecoder()
         LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
-
+    
     int ret = OH_VideoDecoder_Start(decoder_);
     if (ret != AV_ERR_OK) {
         LOGE("Start failed, ret: %{public}d", ret);

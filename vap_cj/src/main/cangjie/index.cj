@@ -3,8 +3,6 @@
  */
 package vap_cj
 
-internal import ohos.base.nativeLog
-
 @C
 public struct CangjieMixData {
     public var tag: CString
@@ -79,7 +77,3 @@ public struct CJMixDataArray {
         this.size = size
     }
 }
-
-foreign func CangjiePluginRenderInit(str: CString): Unit
-// void CangjiePluginRenderPlay(const char* url, struct CangjieMixData data[], void (*callbackFn)(void *context));
-//foreign func CangjiePluginRenderPlay(url: CString, data: CPointer<CangjieMixData>, ptr: CFunc<() -> Unit>): Unit

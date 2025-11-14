@@ -12,4 +12,8 @@ class MyAbilityStage <: AbilityStage {
     public override func onCreate(): Unit {
         AppLog.info("MyAbilityStage onCreated.")
     }
+
+    public open func onDestroy(): Unit{
+        AppLog.info("MyAbilityStage onDestroy.")
+    }
 }

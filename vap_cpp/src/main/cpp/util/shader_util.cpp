@@ -6,9 +6,10 @@
 #include <string>
 #include "log.h"
 
+static std::unordered_map<std::string, GLuint> s_programCache;
+
 GLuint ShaderUtil::CreateProgram(const char *vertexSource, const char *fragmentSource)
 {
-    LOGD("CompileShader: CreateProgram");
     GLuint vertexShaderHandle = CompileShader(GL_VERTEX_SHADER, vertexSource);
     if (!vertexShaderHandle) {
         LOGE("CompileShader: vertexShaderHandle error");

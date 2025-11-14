@@ -6,25 +6,19 @@
 <img alt="" src="https://img.shields.io/badge/release-v1.0.1-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/build-pass-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/cjc-v1.0.3-brightgreen" style="display: inline-block;" />
-<img alt="" src="https://img.shields.io/badge/cjcov-NA-brightgreen" style="display: inline-block;" />
+<img alt="" src="https://img.shields.io/badge/cjcov-92.0-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/project-open-brightgreen" style="display: inline-block;" />
 </p>
 
 ## 介绍
 
-VAP是在数字娱乐和在线互动的时代，视觉效果的精美程度直接影响用户体验。运用特殊算法打造的强大动画粒子特效渲染组件。它不仅能够为应用程序提供令人惊叹的动画效果，更为用户创造了一种身临其境的视觉享受。同时支持 iOS,Android,Web 平台。
+vap-ffi 是基于特殊算法的动画粒子特效渲染组件，为数字娱乐、在线互动场景提供高性能视觉支持，提升用户体验。
 
 ### 特性
 
 - 🚀 支持视频播放、暂停、停止、视频对齐方式
 
 ## 软件架构
-
-### 架构图
-
-<p align="center">
-<!-- <img src="./doc/assets/framework.png" width="60%" > -->
-</p>
 
 ### 源码目录
 
@@ -52,127 +46,222 @@ VAP是在数字娱乐和在线互动的时代，视觉效果的精美程度直�
 |       |-- src  
 |           |-- main  
 |               |-- cpp            # C/c++代码
-|                   |-- include    # C/c++代码头文件
-|                       |-- mask    # C/c++代码头文件
-|                           |-- mask_config.h # 绘画配置文件
-|                           |-- mask_render.h # 绘画配置文件
-|                           |-- mask_shader.h # 绘画配置文件
-|                       |-- mix    # C/c++代码头文件
-|                           |-- frame.h         # 绘画文件
-|                           |-- mix_render.h    # 绘画文件
-|                           |-- mix_shader.h    # 绘画文件
-|                           |-- src.h           # 绘画文件
-|                       |-- render    # C/c++代码头文件
-|                           |-- anim_config.h         # 绘画文件
-|                           |-- egl_core.h            # 绘画主文件
-|                           |-- plugin_render_cangjie_ffi.h       # C/c++代码和仓颉交互的主逻辑代码
-|                           |-- yuv_render.h           # 绘画文件
-|                   |-- manager    # C/c++代码头文件
-|                       |-- plugin_manager.cpp # C/c++代码主逻辑
-|                   |-- mask    # C/c++代码绘画交互类
-|                   |-- mix     # C/c++代码绘画交互类
-|                   |-- render  # C/c++代码实现类
-|                   |-- util  # C/c++代码工具类
 |  |---- README.MD  # 安装使用方法
 ```
 
 ### 接口说明
 
-#####  播放
-
-```
-vapffi.play();
-```
-
-##### 暂停
-
-```
-vapffi.pause();
-```
-
-##### 停止
-
-```
-vapffi.stop();
-```
-
-##### 动画循环播放
-
-```
-vapffi.setLoop();
-```
-
-##### 动画播放速率
-
-```
-vapffi.setSpeed();
-```
-
-##### 动画播放类型
-
-```
-vapffi.getVideoInfo();
-```
-
-##### 动画播放对齐方式
-
-```
-vapffi.setVideoMode();
-```
-
-##### 动画播放区域点击事件
-
-```
-vapffi.on();
-```
-
-##### 网络路径动画
-
-```
-vapffi.setFitType();
-```
+主要类和函数接口说明详见 [API](doc/feature_api.md)
 
 ## 使用说明
 
-### 编译构建
+1. 通过 module 引入
+   ```cangjie
+   1. 克隆下载项目
+   2. 将 vap_cj模块拷贝到应用项目下
+   3. entry 下的 cjpm.toml 文件, 在此文件中添加vap_cj依赖，如下：
+      [dependencies]
+         [dependencies.vap_cj]
+            path = "${vap_cj}"
 
-用devecostudio打开项目,然后点击run按钮直接运行app即可自动编译成功
+   4. 在项目中使用 import vap_cj.* 引用 vap_cj 项目
+      import vap_cj.*  
+   ```   
+   
+2. 通过har引入
+   ```shell
+   1.下载源码 
+   git clone https://gitcode.com/Cangjie-TPC/vap-ffi.git
+   
+   2.har包编译
+   选中vap_cj模块,点击 Build -> Make Module 'vap_cj' 等待编译完成
+   
+   3.使用har包
+   获取har包 vap-ffi\vap_cpp\build\default\outputs\default\vap_cpp.har 复制到自身项目/libs下,并在oh-package.json5中添加依赖
+     "dependencies": {
+       "vap_cj": "file:./libs/vap_cj.har"
+     }
+   4.使用源码
+   import vap_cj.*
 
-### 把vap作为编译启动
-```
-用户如何启动vapffi，具体步骤如下：
-1. 通过git命令,把自己需要的vap分支拉下来,比如
-   git clone -b 分支名  https://gitcode.com/Cangjie-TPC/vap-ffi.git
-2. 对vap_cpp中通过build->make Module 'vapcpp'进行编译
-3. 将编译后build->defaut->intermediates->cmake->defaut->obj下面的arm64-v8a和x86_64下面的所有文件复制到vap_cj->libs下面，然后直接起服务
-```
-
+    ```
 ### 功能示例
 
-在UI中配置XComponent控件
-
-```cj
-    XComponent(id: 'xcomponentId_vap', `type`: XComponentType.TEXTURE, controller: vapController)
-    .width(100.percent)
-    .height(100.percent)
-
 ```
-播放
+internal import ohos.base.*
+internal import ohos.component.Column
+internal import ohos.component.Row
+internal import ohos.component.Button
+internal import ohos.component.Text
+internal import ohos.component.CustomView
+internal import ohos.component.CJEntry
+internal import ohos.component.loadNativeView
+internal import ohos.state_manage.SubscriberManager
+internal import ohos.state_manage.ObservedProperty
+internal import ohos.state_manage.LocalStorage
+internal import ohos.hilog.Hilog
+internal import ohos.resource_manager.*
+import ohos.component.SelectOption
+import ohos.component.Stack
+import ohos.component.Scroll
+import ohos.component.Select
+import ohos.component.Visibility
+import ohos.state_macro_manage.r
+import ohos.state_manage.*
+import ohos.state_macro_manage.Component
+import ohos.state_macro_manage.Entry
+import ohos.state_macro_manage.State
+import std.collection.ArrayList
+import ohos.component.ImageRepeat
+import ohos.component.ViewBase
+import ohos.component.ImageSize
+import ohos.component.ScrollDirection
+import ohos.component.BorderStyle
+import ohos.component.FontWeight
+import vap_cj.*
+import ohos.component.XComponent
+import ohos.component.XComponentType
 
-```cj
-this.vapController.play(uri);
-```
+@Entry
+@Component
+public class GeneralAnimation {
+    @State
+    var vapController: VapController = VapController("GeneralAnimation")
 
-暂停
+    @State
+    var fitType: FitType = FitType.FIT_CENTER
 
-```cj
-this.vapController.pause();
-```
+    @State
+    var buttonEnabled: Bool = true;
 
-停止
+    @State
+    var text: String = "fix_center"
 
-```cj
-this.vapController.stop();
+    func viewInit() {
+        println("GeneralAnimation")
+    }
+    @State
+    var values: Array<SelectOption> =
+        [
+            SelectOption("fix_xy", icon: ""),
+            SelectOption("fix_center", icon: ""),
+            SelectOption("center_crop", icon: "")
+        ]
+
+    protected func aboutToAppear() {
+    	this.vapController.stop()
+    }
+    protected func onPageHide() {
+    	this.vapController.stop()
+    }
+    protected func onPageShow() {}
+
+
+
+    func build() {
+        Column() {
+            Stack {
+                XComponent(id: 'vap_xcomponentId_General', `type`: XComponentType.SURFACE, controller: vapController).width(100.percent).height(100.percent)
+                .backgroundColor(Color.TRANSPARENT).visibility(getVisible(this.buttonEnabled))
+            }.width(100.percent).height(90.percent).backgroundImage(src: @r(app.media.bg), repeat: ImageRepeat.XY).backgroundImageSize(ImageSize.FILL)
+
+            Scroll() {
+                Row() {
+                    Select(this.values)
+                        .selected(1)
+                        .value(text)
+                        .onSelect(
+                            {
+                                index: Int32, event =>
+                                this.fitType = this.fitType.getFitType(index)
+                                Hilog.info(0, "=======  GeneralAnimation Select =========", "[${index}]")
+                            }
+                        )
+                    Button("Play")
+                        .fontWeight(FontWeight.Normal)
+                        .width(40.percent)
+                        .margin(top: 15.px, right: 10.px, bottom: 15.px, left: 10.px)
+                        .onClick({
+                            event => this.play()
+                        }).enabled(this.buttonEnabled)
+
+                    Button("Pause")
+                        .width(20.percent)
+                        .margin(top: 15.px, right: 10.px, bottom: 15.px, left: 10.px)
+                        .onClick({
+                            event => this.pause()
+                        })
+
+                    Button("Stop")
+                        .width(20.percent)
+                        .margin(top: 15.px, right: 10.px, bottom: 15.px, left: 10.px)
+                        .onClick({
+                            event => this.stop()
+                        })
+                }
+            }
+                .width(100.percent)
+                .scrollable(ScrollDirection.Horizontal)
+                .padding(bottom: 10.px)
+                .margin(left: 5.px, right: 5.px)
+                .border(width: 4.px, color: Color.GRAY, radius: 10.px, style: BorderStyle.Solid)
+                .backgroundColor(Color.WHITE)
+        }.width(100.percent).height(100.percent)
+    }
+
+    private func play(): Unit {
+        try {
+            var rootPath = globalAbilityContext.getOrThrow().resourceDir
+            var filePath = "${rootPath}/great_gift.mp4"
+            let opts: ArrayList<CangjieMixData> = ArrayList<CangjieMixData>();
+            this.vapController.setFitType(this.fitType)
+            this.vapController.setVideoMode(VideoMode.VIDEO_MODE_SPLIT_HORIZONTAL)
+
+            this.vapController.setDownloadAttribute(50000, download)
+            this.vapController.setLoop(1)
+            this.buttonEnabled = false
+            this.vapController.play(filePath, opts, cbFn)
+        } catch (e: Exception) {
+            Hilog.error(0, "=======GeneralAnimation  play error=========", "${e.message}")
+        }
+    }
+
+    private func pause(): Unit {
+        Hilog.info(0, "=======VAPXAnimation  pause =========", "pause")
+        try {
+            this.vapController.pause()
+        } catch (e: Exception) {
+            Hilog.error(0, "=======VAPXAnimation  pause error=========", "${e.message}")
+        }
+    }
+
+    private func stop(): Unit {
+        Hilog.info(0, "=======VAPXAnimation  stop =========", "stop")
+        try {
+            this.vapController.stop()
+        } catch (e: Exception) {
+            Hilog.error(0, "=======VAPXAnimation  stop error=========", "${e.message}")
+        }
+    }
+
+    func getVisible(b: Bool): Visibility {
+        if (b) {
+            return Visibility.Hidden
+        } else {
+            return Visibility.Visible
+        }
+    }
+
+    func cbFn(): Unit {
+        this.buttonEnabled = true
+        Hilog.info(0, "=======GeneralAnimation  cbFn =========", "-----GeneralAnimation--cbFn-")
+        // 触发应用侧回调
+    }
+
+    func download(data: DownLoadData): Unit {
+        Hilog.info(0, "=======download  DownLoadData =========", "-----download  DownLoadData-")
+    }
+}
 ```
 
 
@@ -188,7 +277,7 @@ this.vapController.stop();
 
 ## 开源协议 License
 
-本项目基于 [Apache License Version 2.0](/LICENSE) ，请自由的享受和参与开源。
+本项目基于MIT License。详细信息,请参见[License](/LICENSE)。
 
 ## 参与贡献
 

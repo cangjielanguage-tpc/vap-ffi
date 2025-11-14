@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include "common_const.h"
+#include "log.h"
 #include "anim_config.h"
 
 using namespace CommonConst;
@@ -34,13 +35,11 @@ int AnimConfig::GetJson(std::string &jsonStr, std::string &uri)
     std::ifstream file(uri, std::ios::binary);
     int ret = NEGATIVE_ONE;
     if (!file.is_open()) {
-        LOGE("json Failed to open file");
         return ret;
     }
     std::vector<char> buffer(EIGHT);
     while (file.read(buffer.data(), EIGHT)) {
         if (file.eof()) {
-            LOGD("json end of file");
             break;
         }
         BoxHead boxHead;
@@ -67,7 +66,6 @@ int AnimConfig::GetJson(std::string &jsonStr, std::string &uri)
 
 bool AnimConfig::ParseJson(std::string uri, bool isNeedParseFrame)
 {
-    LOGD("Enter ParseJson");
     if (isInit) {
         LOGD("Json data has been initialized");
         return true;
@@ -117,7 +115,6 @@ bool AnimConfig::ParseJson(std::string uri, bool isNeedParseFrame)
     }
     
     isInit = true;
-    LOGD("end ParseJson");
     return true;
 }
 

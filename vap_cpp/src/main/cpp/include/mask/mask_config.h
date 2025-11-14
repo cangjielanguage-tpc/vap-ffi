@@ -5,7 +5,6 @@
 #ifndef VAP_MASK_CONFIG_H
 #define VAP_MASK_CONFIG_H
 
-#include <multimedia/image_framework/image/pixelmap_native.h>
 #include <tuple>
 
 #include "texture_load_util.h"
@@ -26,8 +25,8 @@ public:
     std::tuple<PointRect, RefVec2> maskPositionPair_ =
         std::move(std::make_tuple(PointRect(0, 0, 0, 0), RefVec2(0, 0)));
 
-    int32_t m_width; // animConfig width
-    int32_t m_height;
+    int32_t width_; // animConfig width
+    int32_t height_;
 private:
     GLuint maskTexId_ = 0;
 };

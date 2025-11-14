@@ -1,8 +1,8 @@
 [
     {
         "Name": "VAP",
-        "License": "MIT License",
-        "License File": "LICENSE.MIT ",
+        "License": "MIT",
+        "License File": "LICENSE",
         "Version Number": "2.0.28",
         "Owner" : "Tencent",
         "Upstream URL": "https://github.com/Tencent/vap",
