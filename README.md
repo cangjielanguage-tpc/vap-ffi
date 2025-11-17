@@ -184,9 +184,9 @@ IDE : DevEco Studio 5.1.1.823
 Cangjie Compiler: 1.0.1 (cjnative)
 
 
-## 开源协议 License
+## 开源协议
 
-本项目基于 [Apache License Version 2.0](/LICENSE) ，请自由的享受和参与开源。
+本项目基于MIT License。详细信息,请参见[License](/LICENSE)。
 
 ## 参与贡献
 
