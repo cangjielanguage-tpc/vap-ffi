@@ -196,6 +196,11 @@ public enum VAPSpeed {
 public class DownLoadData {
     public var receiveSize: Int64 = 0
     public var totalSize: Int64 = 0
+
+    public func getDownLoadData(receiveSize: Int64, totalSize: Int64):Unit {
+        this.receiveSize = receiveSize
+        this.totalSize = totalSize
+    }
 }
 
 @C

@@ -170,7 +170,7 @@ int32_t AudioDecoder::PushInputData(AudioCodecBufferInfo &info)
     return AV_ERR_OK;
 }
 
-int32_t AudioDecoder::FreeOutputData(uint32_t bufferIndex)
+int32_t AudioDecoder::FreeOutputData(uint32_t bufferIndex, bool render)
 {
     if (decoder_ == nullptr) {
         LOGE("Decoder is null");

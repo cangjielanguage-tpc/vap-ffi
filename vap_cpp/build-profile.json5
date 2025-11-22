@@ -4,7 +4,7 @@
     "externalNativeOptions": {
       "path": "./src/main/cpp/CMakeLists.txt",
       "abiFilters": ["arm64-v8a", "x86_64"],
-      "arguments": "-DOHOS_STL=c++_shared",
+      "arguments": "-DOHOS_STL=c++_shared -DCMAKE_BUILD_TYPE=Release",
       "cppFlags": "",
     }
   },

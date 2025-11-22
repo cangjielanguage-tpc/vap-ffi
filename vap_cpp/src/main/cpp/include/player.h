@@ -5,17 +5,17 @@
 #ifndef VAP_PLAYER_H
 #define VAP_PLAYER_H
 
-#include "audio_decoder.h"
-#include "data_info.h"
-#include "demuxer.h"
-#include "render/egl_core.h"
-#include "video_decoder.h"
-#include <atomic>
-#include <cstdint>
 #include <js_native_api.h>
-#include <memory>
 #include <mutex>
+#include <memory>
+#include <atomic>
 #include <thread>
+#include <unistd.h>
+#include "audio_decoder.h"
+#include "video_decoder.h"
+#include "demuxer.h"
+#include "egl_core.h"
+#include "data_info.h"
 
 enum class CallbackType {
     UNKNOWN = -1,
@@ -38,14 +38,12 @@ public:
 
     int32_t Init(VAPInfo &info);
     int32_t Start();
-//    void XComponentClick(int32_t eventX, int32_t eventY);
+    void XComponentClick(int32_t eventX, int32_t eventY);
     
     void PauseAndResume();
     void Stop();
     void SetLoop(int32_t loops = 1) { loops_ = loops; }
-    void SetFitType(VideoFitType fitType) { 
-        fitType_ = fitType; 
-    }
+    void SetFitType(VideoFitType fitType) { fitType_ = fitType; }
     void SetSpeed(float speed) { speed_ = speed; }
     void SetVideoMode(VideoMode videoMode);
     bool IsRunning() { return isStarted_; }
@@ -61,7 +59,6 @@ public:
     typedef void(*stateCallback)(int64_t, int64_t);
     typedef void(*stateCallback1)();
     
-    VAPInfo sampleInfo_;
     
     void SetCallback(CallbackType type, stateCallback1 callbackw, void (*callbackFn)(void *context));
     void ClearCallback(CallbackType type);
@@ -69,6 +66,7 @@ public:
     std::unique_ptr<EGLCore> eglCore_ = nullptr;
 private:
     void (*callbackAll_)(void *context) = nullptr;
+    std::mutex callbackRefsMutex_;
     std::map<CallbackType, callbackcj> callbackRefs_;
     
     bool isContainerDestroy_ = false;
@@ -113,11 +111,11 @@ private:
     VDecSignal *signal_ = nullptr;
 
     std::atomic<bool> isStop_{false};
-    std::atomic<bool> isVideoEnd_{false};
-    std::atomic<bool> isAudioEnd_{false};
     std::atomic<bool> isStarted_{false};
     std::atomic<bool> isReleased_{false};
     std::atomic<bool> isVideoEndOfFile_{false};
+    std::atomic<bool> isVideoEnd_{false};
+    std::atomic<bool> isAudioEnd_{false};
 
     std::unique_ptr<std::thread> decAudioInputThread_ = nullptr;
     std::unique_ptr<std::thread> decAudioOutputThread_ = nullptr;
@@ -125,13 +123,14 @@ private:
     std::mutex mutex_;
     std::unique_ptr<std::thread> decInputThread_ = nullptr;
     std::unique_ptr<std::thread> decOutputThread_ = nullptr;
+    VAPInfo sampleInfo_;
     
     int32_t stride_ = 0;
     int32_t sliceHeight_ = 0;
     int32_t frameCurIdx_ = 0;
     
     int32_t renderFrameCurIdx_ = 0;
-    VideoFitType fitType_ = VideoFitType::FIT_CENTER;
+    VideoFitType fitType_ = VideoFitType::FIT_XY;
 };
 
 #endif // VAP_PLAYER_H

@@ -24,7 +24,6 @@ public:
     int32_t mt = 0; // 遮罩旋转角度v2 版本只支持 0 与 90度
 
     bool operator<(const Frame &f) const { return z < f.z; }
-    void PrintInfo();
 };
 
 class FrameSet {

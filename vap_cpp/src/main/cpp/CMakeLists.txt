@@ -1,12 +1,15 @@
 # the minimum version of CMake.
 cmake_minimum_required(VERSION 3.5.1)
 project(XComponent)
-include(clone-repo.cmake)
+
 set(CMAKE_CXX_STANDARD 17)
 set(NATIVERENDER_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DOHOS_PLATFORM)
+
+#include(clone-repo.cmake)
 add_subdirectory(${NATIVERENDER_ROOT_PATH}/include/util/${OHOS_ARCH}/json)
-add_definitions(-DNAPI_VERSION=8)
+#add_definitions(-DNAPI_VERSION=8)
+
 include_directories(
     ${NATIVERENDER_ROOT_PATH}
     ${NATIVERENDER_ROOT_PATH}/napi
@@ -17,6 +20,7 @@ include_directories(
     ${NATIVERENDER_ROOT_PATH}/include/mix
     ${NATIVERENDER_ROOT_PATH}/include/napi
     ${NATIVERENDER_ROOT_PATH}/include/util/${OHOS_ARCH}/json/include
+#    ${NATIVERENDER_ROOT_PATH}/include/util/json/include
 )
 
 add_library(vap SHARED
@@ -34,7 +38,7 @@ add_library(vap SHARED
     render/plugin_render.cpp
     render/yuv_render.cpp
     render/anim_config.cpp
-    render/plugin_render_cangjie_ffi.cpp
+#    render/plugin_render_cangjie_ffi.cpp
     util/shader_util.cpp
     util/tex_coords_util.cpp
     util/vertex_util.cpp
@@ -49,8 +53,7 @@ add_library(vap SHARED
     vap_callback.cpp
 )
 
-target_link_libraries(vap PUBLIC libnative_window.so)
-target_link_libraries(vap PUBLIC libace_napi.z.so)
+target_compile_definitions(vap PUBLIC -DNAPI_VERSION=16)
 target_link_libraries(vap PUBLIC EGL)
 target_link_libraries(vap PUBLIC GLESv3)
 target_link_libraries(vap PUBLIC hilog_ndk.z)
@@ -59,7 +62,8 @@ target_link_libraries(vap PUBLIC ace_napi.z)
 target_link_libraries(vap PUBLIC libc++.a)
 target_link_libraries(vap PUBLIC z)
 target_link_libraries(vap PUBLIC uv)
-target_link_libraries(vap PUBLIC ace_napi.z)
+#target_link_libraries(vap PUBLIC ace_napi.z)
+target_link_libraries(vap PUBLIC libace_napi.z.so)
 target_link_libraries(vap PUBLIC libnative_media_codecbase.so)
 target_link_libraries(vap PUBLIC libnative_media_core.so)
 target_link_libraries(vap PUBLIC libnative_media_vdec.so)
@@ -73,4 +77,6 @@ target_link_libraries(vap PUBLIC libnative_drawing.so)
 target_link_libraries(vap PUBLIC libpixelmap_ndk.z.so)
 target_link_libraries(vap PUBLIC libimage_source.so)
 target_link_libraries(vap PUBLIC libpixelmap.so)
+target_link_libraries(vap PUBLIC libnative_window.so)
+target_link_libraries(vap PUBLIC libace_napi.z.so)
 target_link_libraries(vap PUBLIC nlohmann_json::nlohmann_json)

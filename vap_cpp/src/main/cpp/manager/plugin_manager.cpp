@@ -1,17 +1,19 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
-#include "plugin_manager.h"
+
 #include <cstdint>
 #include <string>
 #include <cstdio>
 
 #include <ace/xcomponent/native_interface_xcomponent.h>
 #include <hilog/log.h>
+#include "plugin_manager.h"
+#include "common/common.h"
 
-PluginManager PluginManager::m_pluginManager;
+std::unordered_map<int64_t, PluginRender*> PluginManager::pluginRenderMap_;
+std::unordered_map<int64_t, OHNativeWindow*> PluginManager::windowMap_;
 
-//static const size_t;
 static const size_t GET_CONTEXT_PARAM_CNT = 1;
 typedef void (*stateCallback)(int64_t);
 
@@ -22,23 +24,15 @@ enum ContextType {
 
 PluginManager::~PluginManager()
 {
-    for (auto iter = pluginRenderMap_.begin(); iter != pluginRenderMap_.end(); ++iter) {
-        if (nullptr != iter->second) {
-            iter->second = nullptr;
-        }
-    }
-    pluginRenderMap_.clear();
-    for (auto iter = windowMap_.begin(); iter != windowMap_.end(); ++iter) {
-        if (nullptr != iter->second) {
-            iter->second = nullptr;
-        }
-    }
-    windowMap_.clear();
+    LOGD("~PluginManager");
+    std::unique_lock<std::mutex> lock(mtx_);
 }
 
 PluginRender *PluginManager::GetPluginRender(int64_t &id){
-    
+    LOGE("GetPluginRender,id: %{public}ld",id);
+    LOGE("GetPluginRender,pluginRenderMap_.size: %{public}ld",pluginRenderMap_.size());
     if(pluginRenderMap_.find(id) != pluginRenderMap_.end()){
+        LOGE("GetPluginRender,pluginRenderMap_.size: %{public}ld",pluginRenderMap_.size());
         return pluginRenderMap_[id];
     }
     return nullptr;
@@ -47,7 +41,8 @@ PluginRender *PluginManager::GetPluginRender(int64_t &id){
 void *PluginManager::SetSurfaceId(int64_t surfaceId){
     OHNativeWindow *nativeWindow;
     PluginRender *pluginRender;
-    if(windowMap_.find(surfaceId) == windowMap_.end()){
+    LOGE("SetSurfaceId,surfaceId: %{public}ld",surfaceId);
+     if(windowMap_.find(surfaceId) == windowMap_.end()){
         OH_NativeWindow_CreateNativeWindowFromSurfaceId(surfaceId, &nativeWindow);
         windowMap_[surfaceId] = nativeWindow;
     }
@@ -59,7 +54,14 @@ void *PluginManager::SetSurfaceId(int64_t surfaceId){
     return nullptr;
 }
 
+
 void *PluginManager::DestroySurface(int64_t surfaceId){
+    LOGI("DestroySurface,surfaceId: %{public}ld",surfaceId);
+    auto pluginRender = GetPluginRender(surfaceId);
+    if (nullptr != pluginRender) {
+        LOGI("DestroySurface,NoticeDestroyed");
+        pluginRender->player_->NoticeDestroyed();
+    }
     auto pluginRenderMapIter = pluginRenderMap_.find(surfaceId);
     if(pluginRenderMapIter != pluginRenderMap_.end()){
         delete pluginRenderMapIter->second;
@@ -67,6 +69,8 @@ void *PluginManager::DestroySurface(int64_t surfaceId){
     }
     auto windowMapIter = windowMap_.find(surfaceId);
     if(windowMapIter != windowMap_.end()){
+        LOGE("windowMapIter != windowMap_.end()");
+        pluginRender->surfaceDestroyed_ = true;
         OH_NativeWindow_DestroyNativeWindow(windowMapIter->second);
         windowMap_.erase(windowMapIter);
     }
