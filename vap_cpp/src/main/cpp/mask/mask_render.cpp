@@ -2,9 +2,9 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 
-#include "mask/mask_render.h"
+#include "mask_render.h"
 
-#include "util/log.h"
+#include "log.h"
 
 #include <GLES2/gl2ext.h>
 #include "common_const.h"
@@ -15,6 +15,7 @@ void MaskRender::RenderFrame(MaskConfig maskConfig)
 {
     auto maskTexId = maskConfig.GetMaskTexId();
     if (maskTexId <= 0) {
+        LOGE("maskTexId not ready, cont Rendered");
     }
     
     auto texTuple = maskConfig.maskTexPair_;
@@ -26,14 +27,14 @@ void MaskRender::RenderFrame(MaskConfig maskConfig)
     if (std::get<0>(positionTuple).w != 0 && std::get<0>(positionTuple).h != 0) {
         maskPositionRect = std::get<0>(positionTuple);
     } else {
-        maskPositionRect = PointRect(0, 0, maskConfig.m_width, maskConfig.m_height);
+        maskPositionRect = PointRect(0, 0, maskConfig.width_, maskConfig.height_);
     }
 
     RefVec2 maskPositionRefVec2;
     if (std::get<1>(positionTuple).w != 0 && std::get<1>(positionTuple).h !=0) {
         maskPositionRefVec2 = std::get<1>(positionTuple);
     } else {
-        maskPositionRefVec2 = RefVec2(maskConfig.m_width, maskConfig.m_height);
+        maskPositionRefVec2 = RefVec2(maskConfig.width_, maskConfig.height_);
     }
     
     m_maskShader->UseProgram();

@@ -13,14 +13,9 @@ internal import ohos.state_manage.SubscriberManager
 internal import ohos.state_manage.ObservedProperty
 internal import ohos.state_manage.LocalStorage
 internal import ohos.hilog.Hilog
-internal import ohos.resource_manager.ResourceManager
 internal import std.convert.*
-internal import ohos.ability.getStageContext
-internal import ohos.base.AsyncCallback
 internal import ohos.component.SelectOption
-import std.collection.concurrent.ConcurrentHashMap
 import vap_cj.*
-import std.collection.HashMap
 import ohos.component.Stack
 import ohos.component.Scroll
 import ohos.component.Select
@@ -30,19 +25,11 @@ import ohos.state_manage.*
 import ohos.state_macro_manage.Component
 import ohos.state_macro_manage.Entry
 import ohos.state_macro_manage.State
-import ohos.component.Image
 import ohos.component.XComponent
 import ohos.component.XComponentType
 import std.collection.ArrayList
 import ohos.component.ImageRepeat
 import ohos.component.ViewBase
-import ohos.image.Image as MultiImage
-import ohos.image.Component as ImageComponent
-import ohos.image.InitializationOptions
-import ohos.image.PixelMapFormat
-import ohos.image.PixelMap
-import ohos.image.createPixelMap
-import ohos.image.Size as UniqueImageSize
 import ohos.component.ImageSize
 import ohos.component.ScrollDirection
 import ohos.component.BorderStyle
@@ -71,6 +58,8 @@ public class VAPXAnimation {
 
     @State
     var text: String = "fix_center"
+
+    var videoName: String = "demo.mp4";
 
     @State
     var colorText: String = "red"
@@ -157,7 +146,6 @@ public class VAPXAnimation {
                                 {
                                     index: Int32, event =>
                                     this.colorIdx = index
-                                    Hilog.info(0, "=======  GeneralAnimation Select =========", "[${this.colorIdx}]")
                                 }
                             )
 
@@ -194,7 +182,6 @@ public class VAPXAnimation {
                                 {
                                     index: Int32, event =>
                                     this.fitType = this.fitType.getFitType(index)
-                                    Hilog.info(0, "=======  GeneralAnimation Select =========", "[${index}]")
                                 }
                             )
 
@@ -206,7 +193,6 @@ public class VAPXAnimation {
                                 {
                                     index: Int32, event =>
                                     this.fontWeight = this.fontWeight.getFontWeight(index)
-                                    Hilog.info(0, "=======  GeneralAnimation Select =========", "[${index}]")
                                 }
                             )
 
@@ -218,7 +204,6 @@ public class VAPXAnimation {
                                 {
                                     index: Int32, event =>
                                     this.textAlign = this.textAlign.getVAPTextAlign(index)
-                                    Hilog.info(0, "=======  GeneralAnimation Select =========", "[${index}]")
                                 }
                             )
                     }
@@ -261,13 +246,12 @@ public class VAPXAnimation {
     }
 
     private func play(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  play =========", "play")
-
         try {
             var rootPath = globalAbilityContext.getOrThrow().resourceDir
-            var filePath = "${rootPath}/123.mp4"
+            var filePath = "${rootPath}/" + videoName
             this.srcInfo = this.vapController.getVideoInfo(filePath)
             this.vapController.setFitType(this.fitType)
+            this.vapController.setLoop(1)
             let mixDatas: Array<CangjieMixData> = []
             if (!this.srcInfo.isEmpty()) {
                 for (i in 0..this.srcInfo.size-1) {
@@ -278,7 +262,6 @@ public class VAPXAnimation {
                             this.color.a, this.color.r, this.color.g, this.color.b)
                     }
                 }
-                Hilog.info(0, "=======config mixData:  =========", "config mixData")
             } else {
                 Hilog.info(0, "error not get srcInfo", "error not get srcInfo")
             }
@@ -305,7 +288,6 @@ public class VAPXAnimation {
     }
 
     private func pause(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  pause =========", "pause")
         try {
             this.vapController.pause()
         } catch (e: Exception) {
@@ -314,7 +296,6 @@ public class VAPXAnimation {
     }
 
     private func stop(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  stop =========", "stop")
         try {
             this.vapController.stop()
         } catch (e: Exception) {
@@ -332,8 +313,6 @@ public class VAPXAnimation {
 
     func cbFn(): Unit {
         this.buttonEnabled = true
-        Hilog.info(0, "=======GeneralAnimation  cbFn =========", "-----GeneralAnimation--cbFn-")
-        // 触发应用侧回调
     }
 }
 

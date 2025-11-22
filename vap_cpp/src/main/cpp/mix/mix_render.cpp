@@ -4,6 +4,7 @@
 
 #include "mix_render.h"
 
+#include "log.h"
 #include "tex_coords_util.h"
 #include "resource_request.h"
 #include "anim_config.h"
@@ -56,19 +57,18 @@ void MixRender::GenSrcTexture(Src src, BitMap &bitmap, const MixInputData mixDat
         if (mixData.isSet & SET_FONT_WEIGHT) {
             txtOpt.fontWeight = mixData.fontWeight;
         }
-        LOGD("GenSrcTexture tag %{public}s ta ta: %{public}d-%{public}d", src.srcTag.c_str(),
+        LOGI("GenSrcTexture tag %{public}s ta ta: %{public}d-%{public}d", src.srcTag.c_str(),
             txtOpt.textAlign, mixData.textAlign);
 
         reqPtr->FetchText(bitmap.pixelsData, txtOpt);
     } else if (src.srcType == SrcType::IMG) {
         ImageOption imgOpt;
-        imgOpt.uri = mixData.imgUri.c_str();
         imgOpt.width = src.w;
         imgOpt.height = src.h;
         imgOpt.fixType = src.fitType;
-        reqPtr->FetchImg(bitmap.pixelsData, imgOpt);
+        reqPtr->FetchImg(bitmap.pixelsData, imgOpt, mixData);
         if (bitmap.pixelsData.empty()) {
-            LOGD("MixRender FetchImg error");
+            LOGI("MixRender FetchImg error");
             bitmap.pixelsData.resize(src.w * src.h * FOUR);
             fill(bitmap.pixelsData.begin(), bitmap.pixelsData.end(), 0xaa);
         }
@@ -93,13 +93,13 @@ void MixRender::Init()
         BitMap bitmap;
         
         if (m_mixData.find(it->second.srcTag) == m_mixData.end()) {
-            LOGW("MixRender Data tag: %{public}s not find.", it->second.srcTag.c_str());
+            LOGI("MixRender Data tag: %{public}s not find.", it->second.srcTag.c_str());
             isEnough = false;
             bitmap.pixelsData.resize(src.w * src.h * FOUR);
             fill(bitmap.pixelsData.begin(), bitmap.pixelsData.end(), 0xaa);
         } else {
             MixInputData mixData = m_mixData.at(it->second.srcTag);
-            LOGD("Init tag %{public}s fw ta: %{public}d-%{public}d", it->second.srcTag.c_str(),
+            LOGI("Init tag %{public}s fw ta: %{public}d-%{public}d", it->second.srcTag.c_str(),
                 mixData.fontWeight, mixData.textAlign);
             if (src.srcType == SrcType::TXT && (mixData.isSet & SET_COLOR)) {
                 ColorARGB color = mixData.color;

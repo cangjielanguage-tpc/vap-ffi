@@ -1,22 +1,23 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
+
 #ifndef VAP_DATATYPE_INFO_H
 #define VAP_DATATYPE_INFO_H
 
-#include "mix_render.h"
-#include "multimedia/player_framework/native_avbuffer.h"
-#include "multimedia/player_framework/native_avcodec_base.h"
 #include <EGL/eglplatform.h>
 #include <bits/alltypes.h>
-#include <condition_variable>
 #include <cstdint>
 #include <js_native_api_types.h>
 #include <multimedia/player_framework/native_avcodec_videoencoder.h>
-#include <native_buffer/native_buffer.h>
 #include <ohaudio/native_audiostream_base.h>
 #include <string>
+#include <condition_variable>
 #include <queue>
+#include <native_buffer/native_buffer.h>
+#include "mix_render.h"
+#include "multimedia/player_framework/native_avcodec_base.h"
+#include "multimedia/player_framework/native_avbuffer.h"
 
 #define ANNEXB_INPUT_ONLY 1
 
@@ -42,10 +43,6 @@ struct CJBytesArray {
     int64_t size;
     uint8_t *buf;
 };
-
-typedef struct {
-    CJBytesArray tag;
-}TagCharCp;
 
 struct CJInt64Array {
     int64_t size;
@@ -113,8 +110,8 @@ struct VAPInfo {
     double memcpyTime = 0;
     double writeTime = 0;
     
-    int64_t width;
-    int64_t height;
+    int32_t width;
+    int32_t height;
     std::string uri;
     std::map<std::string, MixInputData> iptData;
 };

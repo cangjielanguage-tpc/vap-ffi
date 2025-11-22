@@ -15,7 +15,6 @@ using namespace CommonConst;
 
 void YuvRender::InitRender(std::string uri)
 {
-    LOGD("enter YuvRender::InitRender");
     shaderProgram_ = ShaderUtil::CreateProgram(g_vertexShader, g_fragmentShader);
     avPosition_ = glGetAttribLocation(shaderProgram_, "v_Position");
     rgbPosition_ = glGetAttribLocation(shaderProgram_, "vTexCoordinateRgb");
@@ -39,7 +38,6 @@ void YuvRender::InitRender(std::string uri)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
-    LOGD("end YuvRender::InitRender");
 }
 
 void YuvRender::SetYUVData(int32_t width, int32_t height, const std::vector<unsigned char> &y,
@@ -131,7 +129,6 @@ GLuint YuvRender::GetExternalTexture()
 
 void YuvRender::SetAnimConfig(std::shared_ptr<AnimConfig> animConfig)
 {
-    LOGD("enter YuvRender::SetAnimConfig");
     if (!animConfig) {
         LOGE("YuvRender animConfig nullptr");
         return;
@@ -145,5 +142,4 @@ void YuvRender::SetAnimConfig(std::shared_ptr<AnimConfig> animConfig)
         animConfig->rgbPointRect, rgb_.array.get());
     alpha_.SetArray(alpha_.array.get());
     rgb_.SetArray(rgb_.array.get());
-    LOGD("end YuvRender::SetAnimConfig");
 }

@@ -6,6 +6,7 @@ package vap_cj
 internal import ohos.hilog.Hilog
 import std.regex.*
 import ohos.net.http.*
+import std.fs.Path
 
 public class DownloadFile {
     public func downloadFile(url: String, dir: String): String {
@@ -34,8 +35,6 @@ public class DownloadFile {
                 if (let Some(r) <- resp) {
                     Hilog.error(0, "DownloadFile downloadFile resp", "${r}")
                     let data = r.result as Array<UInt8>
-//                    writeFile(filePath, data)   TODO
-//                    return filePath
                 } else {
                     Hilog.error(0, "DownloadFile downloadFile resp is none", "resp is none")
                 }
@@ -47,20 +46,21 @@ public class DownloadFile {
     }
 
     public func extractFileName(url: String): String {
+
         // 使用正则表达式匹配 URL 中的文件名部分
-        let rule: Regex = Regex("/\\/([^\\/?#]+)[^\\/]*$/")
-        if (rule.matcher(url).find().isSome()) {
-            let matcher = rule.matcher(url)
-            var arr: Array<MatchData> = matcher.findAll() ?? Array<MatchData>()
-            return arr[0].matchString(Int64(1))
+        let rule: Regex = Regex("[^\\/]+\\.[^\\/?#]+(?=[\\/?#]|$)")
+        var matches = rule.matches(url);
+        if (matches) {
+            let path: Path = Path(url)
+            return path.fileName;
         }
-        return ""
+        // 如果没有匹配到，则返回空字符串或者你想要的默认值
+        return '';
     }
 
     public func startsWithHttp(url: String): Bool {
         return url.startsWith("http") || url.startsWith("https")
     }
-
 
     public func writeFile(filePath: String, buf: Array<UInt8>): Unit {
         //let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
