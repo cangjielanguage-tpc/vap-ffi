@@ -4,30 +4,20 @@
 
 #include "plugin_render.h"
 #include "util/cj_string_util.h"
-
+#include "plugin_manager.h"
+#include <cstdint>
+#include <js_native_api.h>
+#include <log.h>
 #include <multimedia/image_framework/image/image_source_native.h>
 #include <multimedia/image_framework/image_pixel_map_mdk.h>
-#include <cstdint>
-#include <string>
-#include <js_native_api.h>
-#include <js_native_api_types.h>
-#include <log.h>
-#include <uv.h>
 #include <optional>
-#include "plugin_manager.h"
-
-#ifndef CJ_EXPORT
-#ifdef WINDOWS_PLATFORM
-#define CJ_EXPORT __declspec(dllexport)
-#else
-#define CJ_EXPORT __attribute__((visibility("default")))
-#endif
-#endif
+#include <string>
+#include <uv.h>
 
 std::mutex g_mtx;
 std::unordered_map<int64_t, std::shared_ptr<PluginRender>> PluginRender::m_instance;
 extern "C" {
-PluginRender::PluginRender(int64_t &id)
+PluginRender::PluginRender(int64_t &id) 
 {
     this->eglCore_ = new EGLCore();
     hasDraw_ = 0;
@@ -35,7 +25,7 @@ PluginRender::PluginRender(int64_t &id)
     this->m_id = id;
 }
 
-PluginRender::~PluginRender()
+PluginRender::~PluginRender() 
 {
     if (player_) {
         LOGI("PluginRender player_");
@@ -43,92 +33,86 @@ PluginRender::~PluginRender()
     }
 }
 
-void PluginRender::ChangeColor(){
-    eglCore_->ChangeColor(hasChangeColor_);
-}
+void PluginRender::ChangeColor() { eglCore_->ChangeColor(hasChangeColor_); }
 
-void PluginRender::DrawPattern(){
-    eglCore_->Draw(hasDraw_);
-}
+void PluginRender::DrawPattern() { eglCore_->Draw(hasDraw_); }
 
-void PluginRender::UpdateNativeWindowSize(int width, int height){
+void PluginRender::UpdateNativeWindowSize(int width, int height) 
+{
     eglCore_->UpdateSize(width, height);
-    if(!hasChangeColor_ && !hasDraw_){
+    if (!hasChangeColor_ && !hasDraw_) {
         eglCore_->Background();
     }
 }
 
-int32_t PluginRender::HasDraw(){
-    return hasDraw_;
-}
+int32_t PluginRender::HasDraw() { return hasDraw_; }
 
-int32_t PluginRender::HasChangedColor(){
-    return hasChangeColor_;
-}
+int32_t PluginRender::HasChangedColor() { return hasChangeColor_; }
 
-static void ParseMixParamTag(std::string tag, std::string &tag1) {
+static void ParseMixParamTag(std::string tag, std::string &tag1) 
+{
     if (!tag.empty()) {
-        LOGE("--2222----ParseMixParamTag mix tag %{public}s", tag.c_str());
         tag1 = tag;
     } else {
-        LOGE("--2222----parse mix tag not set");
         return;
     }
 }
 
-static void ParseMixParamTxt(MixInputData &mixInputData, std::string txt) {
+static void ParseMixParamTxt(MixInputData &mixInputData, std::string txt) 
+{
     if (!txt.empty()) {
         mixInputData.txt = txt;
-        LOGI("parse mix txt");
     }
 }
 
-static void ParseMixParamImg(MixInputData &mixInputData, std::string imgUri) {
+static void ParseMixParamImg(MixInputData &mixInputData, std::string imgUri)
+{
     if (!imgUri.empty()) {
         mixInputData.imgSrc.buffer = imgUri;
-        LOGI("--333----ParseMixParamTag mix txt %{public}s", imgUri.c_str());
     }
 }
 
-static void ParseMixParamColor(MixInputData &mixInputData, std::uint64_t valueA, std::uint64_t valueR, 
+static void ParseMixParamColor(MixInputData &mixInputData, std::uint64_t valueA, std::uint64_t valueR,
                                std::uint64_t valueG, std::uint64_t valueB) 
 {
-     if (valueA && valueR && valueG && valueB) {
+    if (valueA && valueR && valueG && valueB) {
         uint32_t valueA32 = static_cast<uint32_t>(valueA);
         uint32_t valueR32 = static_cast<uint32_t>(valueR);
         uint32_t valueG32 = static_cast<uint32_t>(valueG);
         uint32_t valueB32 = static_cast<uint32_t>(valueB);
         mixInputData.color = {valueA32, valueR32, valueG32, valueB32};
         mixInputData.isSet |= SET_COLOR;
-     }
-}
-
-static std::optional<OH_Drawing_FontWeight> intToFontWeight(int value) {
-    switch (value) {
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_100):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_100;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_200):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_200;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_300):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_300;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_400):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_400;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_500):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_500;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_600):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_600;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_700):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_700;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_800):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_800;
-    case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_900):
-        return OH_Drawing_FontWeight::FONT_WEIGHT_900;
-    default:
-        return std::nullopt;
     }
 }
 
-static void ParseMixParamFontWeight(MixInputData &mixInputData, int value) {
+static std::optional<OH_Drawing_FontWeight> intToFontWeight(int value) 
+{
+    switch (value) {
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_100):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_100;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_200):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_200;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_300):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_300;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_400):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_400;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_500):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_500;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_600):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_600;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_700):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_700;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_800):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_800;
+        case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_900):
+            return OH_Drawing_FontWeight::FONT_WEIGHT_900;
+        default:
+            return std::nullopt;
+    }
+}
+
+static void ParseMixParamFontWeight(MixInputData &mixInputData, int value) 
+{
     auto fontWeight = intToFontWeight(value);
     if (fontWeight) {
         mixInputData.fontWeight = fontWeight.value();
@@ -136,26 +120,28 @@ static void ParseMixParamFontWeight(MixInputData &mixInputData, int value) {
     }
 }
 
-static std::optional<OH_Drawing_TextAlign> intToTextAlign(int value) {
+static std::optional<OH_Drawing_TextAlign> intToTextAlign(int value) 
+{
     switch (value) {
-    case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_CENTER):
-        return OH_Drawing_TextAlign::TEXT_ALIGN_CENTER;
-    case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_JUSTIFY):
-        return OH_Drawing_TextAlign::TEXT_ALIGN_JUSTIFY;
-    case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_START):
-        return OH_Drawing_TextAlign::TEXT_ALIGN_START;
-    case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_END):
-        return OH_Drawing_TextAlign::TEXT_ALIGN_END;
-    case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_LEFT):
-        return OH_Drawing_TextAlign::TEXT_ALIGN_LEFT;
-    case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_RIGHT):
-        return OH_Drawing_TextAlign::TEXT_ALIGN_RIGHT;
-    default:
-        return std::nullopt;
+        case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_CENTER):
+            return OH_Drawing_TextAlign::TEXT_ALIGN_CENTER;
+        case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_JUSTIFY):
+            return OH_Drawing_TextAlign::TEXT_ALIGN_JUSTIFY;
+        case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_START):
+            return OH_Drawing_TextAlign::TEXT_ALIGN_START;
+        case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_END):
+            return OH_Drawing_TextAlign::TEXT_ALIGN_END;
+        case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_LEFT):
+            return OH_Drawing_TextAlign::TEXT_ALIGN_LEFT;
+        case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_RIGHT):
+            return OH_Drawing_TextAlign::TEXT_ALIGN_RIGHT;
+        default:
+            return std::nullopt;
     }
 }
 
-static void ParseMixParamTextAlign(MixInputData &mixInputData, int value) {
+static void ParseMixParamTextAlign(MixInputData &mixInputData, int value) 
+{
     auto textAlign = intToTextAlign(value);
     if (textAlign) {
         mixInputData.textAlign = textAlign.value();
@@ -163,12 +149,13 @@ static void ParseMixParamTextAlign(MixInputData &mixInputData, int value) {
     }
 }
 
-void ParseMixParam(std::map<std::string, MixInputData> &mixData, CangjieMixData *mixDataCj, size_t length) {
+void ParseMixParam(std::map<std::string, MixInputData> &mixData, CangjieMixData *mixDataCj, size_t length) 
+{
     for (uint32_t i = 0; i < length; i++) {
         // 获取当前结构体元素的引用
         MixInputData mixInputData;
         std::string tag;
-        ParseMixParamTag(mixDataCj[i].tag,tag);
+        ParseMixParamTag(mixDataCj[i].tag, tag);
         ParseMixParamTxt(mixInputData, mixDataCj[i].txt);
         ParseMixParamImg(mixInputData, mixDataCj[i].imgUri);
         std::uint64_t colorA = mixDataCj[i].colorA;
@@ -182,7 +169,8 @@ void ParseMixParam(std::map<std::string, MixInputData> &mixData, CangjieMixData 
     }
 }
 
-struct CallbackContext4cj {
+struct CallbackContext4cj 
+{
     void (*callbackRef)() = nullptr;
     int what = 0;
     int arg1 = 0;
@@ -192,7 +180,7 @@ struct CallbackContext4cj {
 };
 
 
-CJBytesArray RemoveSurroundingChars(const std::string& str, char startChar, char endChar)
+CJBytesArray RemoveSurroundingChars(const std::string &str, char startChar, char endChar) 
 {
     size_t start = str.find_first_not_of(startChar);
     if (start == std::string::npos) {
@@ -203,14 +191,14 @@ CJBytesArray RemoveSurroundingChars(const std::string& str, char startChar, char
         return {0, nullptr}; // 如果字符串中没有找到非endChar的字符，返回空字符串
     }
     str.substr(start, end - start + 1);
-    return pag::stringToCJBytesArray((char*)str.c_str());
+    return pag::stringToCJBytesArray((char *)str.c_str());
 }
 
-static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src)
+static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src) 
 {
     std::vector<SrcInfoo> srcInfos;
     size_t i = 0;
-    for (auto ele: src) {
+    for (auto ele : src) {
         auto srcId = atoi(ele.first.c_str());
         CJBytesArray tagDeal = RemoveSurroundingChars(ele.second.srcTag, '[', ']');
         auto type = static_cast<int>(ele.second.srcType);
@@ -224,18 +212,19 @@ static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src)
     return srcInfos;
 }
 
-void freeCJBytesArray(CJBytesArray *cjbytesArray, int64_t i);
-void freeCJBytesArray(CJBytesArray *cjbytesArray, int64_t i){
-    if(cjbytesArray[i].buf == nullptr){
+void freeCJBytesArray(CJBytesArray *cjbytesArray, int64_t i) 
+{
+    if (cjbytesArray[i].buf == nullptr) {
         return;
     }
     uint8_t *buf = cjbytesArray[i].buf;
-    if(buf != nullptr){
+    if (buf != nullptr) {
         free(buf);
     }
 }
 
-void Callback(void *asyncContext) {
+void Callback(void *asyncContext) 
+{
     if (asyncContext == nullptr) {
         return;
     }
@@ -244,54 +233,47 @@ void Callback(void *asyncContext) {
     uv_work_t *work = new uv_work_t;
     work->data = context;
     if (work == nullptr) {
-        LOGI("napi-->work null");
         return;
     }
     loop = uv_default_loop();
     uv_queue_work(
         loop, work,
         [](uv_work_t *work) { /* 线程池执行逻辑 */
-            CallbackContext *context = (CallbackContext *)work->data;
-            if (context && context->vapState == VapState::FAILED) {
-                LOGD("------The vap status in the thread is failed");
-            } else if (context && (context->vapState == VapState::RENDER || context->vapState == VapState::START)) {
-                context->callbackRef();
-                LOGD("------The vap status in the thread is -RENDER、START1");
-            } else if (context) {
-                LOGD("------The vap status in the thread is -RENDER、START2");
-                context->callbackRef();
-            }
+                              CallbackContext *context = (CallbackContext *)work->data;
+                              if (context && context->vapState == VapState::FAILED) {
+                              } else if (context && (context->vapState == VapState::RENDER ||
+                                                     context->vapState == VapState::START)) {
+                                  context->callbackRef();
+                              } else if (context) {
+                                  context->callbackRef();
+                              }
         },
         [](uv_work_t *work, int status) {
             if (work != nullptr) {
-                LOGD("------The vap status in the thread is -work1");
-                    delete work;
-                LOGD("------The vap status in the thread is -work2");
+                delete work;
             }
-                    delete (CallbackContext *)work->data;
-            LOGD("------The vap status in the thread is -uv_queue_work end");
+            delete (CallbackContext *)work->data;
         });
 }
 
-typedef void (*Callback1)();
-void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t length, Callback1 backw, int64_t id);
-void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t length, Callback1 backw, int64_t id) {
+void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t length, Callback1 backw, int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
-    
-    if(render){
+
+    if (render) {
         std::string uri = url;
-        if(uri.empty()){
+        if (uri.empty()) {
             return;
         }
         VAPInfo info;
         std::map<std::string, MixInputData> mixData;
-        ParseMixParam(mixData,mixDataCj,length);
-        if(render->player_ == nullptr){
+        ParseMixParam(mixData, mixDataCj, length);
+        if (render->player_ == nullptr) {
             return;
         }
         render->player_->SetCallback(CallbackType::PLAY_DONE, backw, &Callback);
         info.uri = uri;
-        info.window = static_cast<NativeWindow*>(render->m_window);
+        info.window = static_cast<NativeWindow *>(render->m_window);
         info.width = render->m_width;
         info.height = render->m_height;
         info.iptData = mixData;
@@ -299,59 +281,55 @@ void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t 
     }
 }
 
-typedef void (*stateCallback)(int64_t,int64_t);
-void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id);
-void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id){
+void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
-    if(render){
-        if(render->player_->IsRunning()){
+    if (render) {
+        if (render->player_->IsRunning()) {
             return;
         }
         std::string newStr = str;
-        if(newStr != "stateChange" && newStr != "click"){
+        if (newStr != "stateChange" && newStr != "click") {
             return;
         }
         void (*callback)(void *context) = nullptr;
         callback = &Callback;
-        if(callback){
-            if(newStr == "click"){
-                //  render->player_->SetCallback;
-            }else if(newStr == "stateChange"){
-                //  render->player_->SetCallback;
+        if (callback) {
+            if (newStr == "click") {
+            } else if (newStr == "stateChange") {
             }
         }
     }
 }
 
-void CangjiePluginRenderPause(int64_t id);
-void CangjiePluginRenderPause(int64_t id) {
+void CangjiePluginRenderPause(int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
-    if(render){
+    if (render) {
         render->player_->PauseAndResume();
     }
 }
 
-void CangjiePluginRenderStop(int64_t id);
-void CangjiePluginRenderStop(int64_t id) {
+void CangjiePluginRenderStop(int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (render && render->player_) {
         render->player_->Stop();
     }
 }
 
-void CangjiePluginRenderSetLoop(int64_t loops, int64_t id);
-void CangjiePluginRenderSetLoop(int64_t loops, int64_t id) {
+void CangjiePluginRenderSetLoop(int64_t loops, int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (render) {
         render->player_->SetLoop(loops);
     }
 }
 
-void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id);
-void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id) {
+void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
-        LOGE("Not get render");
         return;
     }
     VideoFitType fitType = VideoFitType::FIT_XY;
@@ -365,11 +343,10 @@ void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id) {
     render->player_->SetFitType(fitType);
 }
 
-SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id);
-SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id) {
+SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
-        LOGE("Not get render");
         return {};
     }
     std::string uri = url;
@@ -386,37 +363,36 @@ SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id) {
     int64_t *srcIdInt64 = new int64_t[size];
     int64_t *srcTypeInt64 = new int64_t[size];
     std::vector<CJBytesArray> markers;
-    for(const auto &item : srcInfo){
+    for (const auto &item : srcInfo) {
         srcIdInt64[i] = item.srcId;
         srcTypeInt64[i] = item.srcType;
         markers.push_back(item.tag);
         i++;
     }
-    if(markers.empty()){
-        return SrcInfoArray{0,0,0,{},0,0};
+    if (markers.empty()) {
+        return SrcInfoArray{0, 0, 0, {}, 0, 0};
     }
 
     long long size1 = markers.size();
     CJBytesArray *arr = new CJBytesArray[size1];
-    for(size_t i = 0; i<size1;i++){
+    for (size_t i = 0; i < size1; i++) {
         arr[i] = markers[i];
     }
-    return SrcInfoArray{size, srcIdInt64, srcTypeInt64, CJInt64Array{size, arr}, animConfig.width, animConfig.height };
+    return SrcInfoArray{size, srcIdInt64, srcTypeInt64, CJInt64Array{size, arr}, animConfig.width, animConfig.height};
 }
 
-void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id);
-void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id) {
+void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
-        LOGE("Not get render");
         return;
     }
     VideoMode videoMode = VIDEO_MODE_SPLIT_HORIZONTAL;
-    if (videoModeInt == nullptr) {
+    if (videoModeInt == reinterpret_cast<const int64_t *>(0)) {
         videoMode = VIDEO_MODE_SPLIT_HORIZONTAL;
-    } else if (static_cast<int>(*videoModeInt) == 1) {
+    } else if (videoModeInt == reinterpret_cast<const int64_t *>(1)) {
         videoMode = VIDEO_MODE_SPLIT_VERTICAL;
-    } else if (static_cast<int>(*videoModeInt) == 2) {
+    } else if (videoModeInt == reinterpret_cast<const int64_t *>(2)) {
         videoMode = VIDEO_MODE_SPLIT_HORIZONTAL_REVERSE;
     } else {
         videoMode = VIDEO_MODE_SPLIT_VERTICAL_REVERSE;
@@ -424,16 +400,12 @@ void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id) {
     render->player_->SetVideoMode(videoMode);
 }
 
-CJBytesArray GetsElementAnArray(CJBytesArray *cJBytesArray, int64_t i);
-CJBytesArray GetsElementAnArray(CJBytesArray *cJBytesArray, int64_t i){
-    return cJBytesArray[i];
-}
+CJBytesArray GetsElementAnArray(CJBytesArray *cJBytesArray, int64_t i) { return cJBytesArray[i]; }
 
-void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id);
-void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id) {
+void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id) 
+{
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
-        LOGE("Not get render");
         return;
     }
     float speed = std::clamp(*speedInt, 0.25f, 4.0f);
@@ -441,24 +413,13 @@ void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id) {
 }
 
 EXTERN_C_START
-CJ_EXPORT void FFIChangeColor(int64_t surfaceId);
-CJ_EXPORT void FFIChangeColor(int64_t surfaceId)
-{
-    PluginManager::ChangeColor(surfaceId);
-}
-CJ_EXPORT void FFIDrawPattern(int64_t surfaceId);
-CJ_EXPORT void FFIDrawPattern(int64_t surfaceId)
-{
-    PluginManager::DrawPattern(surfaceId);
-}
+CJ_EXPORT void FFIChangeColor(int64_t surfaceId) { PluginManager::ChangeColor(surfaceId); }
 
-CJ_EXPORT void FFISetSurfaceId(int64_t surfaceId);
-CJ_EXPORT void FFISetSurfaceId(int64_t surfaceId)
-{
-    PluginManager::SetSurfaceId(surfaceId);
-}
+CJ_EXPORT void FFIDrawPattern(int64_t surfaceId) { PluginManager::DrawPattern(surfaceId); }
 
-CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height)
+CJ_EXPORT void FFISetSurfaceId(int64_t surfaceId) { PluginManager::SetSurfaceId(surfaceId); }
+
+CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height) 
 {
     PluginManager::ChangeSurface(surfaceId, width, height);
     PluginRender *render = PluginManager::GetPluginRender(surfaceId);
@@ -466,31 +427,21 @@ CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height)
         render->player_ = std::make_unique<Player>();
         render->m_width = width;
         render->m_height = height;
-        
+
         uint64_t actualWidth = 0;
         uint64_t actualHeight = 0;
         OH_NativeXComponent_GetXComponentSize(render->m_component, render->m_window, &actualWidth, &actualHeight);
         if (render->player_ != nullptr && render->player_->eglCore_ != nullptr) {
-            LOGI("UpdateSize start");
             render->player_->eglCore_->UpdateSize(actualWidth, actualHeight);
         }
     }
 }
 
-CJ_EXPORT void FFIDestroySurface(int64_t surfaceId);
-CJ_EXPORT void FFIDestroySurface(int64_t surfaceId)
-{
-    PluginManager::DestroySurface(surfaceId);
-}
+CJ_EXPORT void FFIDestroySurface(int64_t surfaceId) { PluginManager::DestroySurface(surfaceId); }
 
-CJ_EXPORT bool FFIGetXComponentHasDraw(int64_t surfaceId);
-CJ_EXPORT bool FFIGetXComponentHasDraw(int64_t surfaceId)
-{
-    return PluginManager::GetXComponentHasDraw(surfaceId);
-}
+CJ_EXPORT bool FFIGetXComponentHasDraw(int64_t surfaceId) { return PluginManager::GetXComponentHasDraw(surfaceId); }
 
-CJ_EXPORT bool FFIXComponentHasChangeColor(int64_t surfaceId);
-CJ_EXPORT bool FFIXComponentHasChangeColor(int64_t surfaceId)
+CJ_EXPORT bool FFIXComponentHasChangeColor(int64_t surfaceId) 
 {
     return PluginManager::GetXComponentHasChangeColor(surfaceId);
 }

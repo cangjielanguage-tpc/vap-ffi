@@ -67,7 +67,6 @@ FrameSet::FrameSet(json jsonObj)
 
     auto objJsonArrayIt = jsonObj.find("obj");
     if (objJsonArrayIt == jsonObj.end()) {
-        LOGE("FrameSet: missing obj");
         return;
     }
 

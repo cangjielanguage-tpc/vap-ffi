@@ -6,7 +6,7 @@
 <img alt="" src="https://img.shields.io/badge/release-v1.0.1-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/build-pass-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/cjc-v1.0.3-brightgreen" style="display: inline-block;" />
-<img alt="" src="https://img.shields.io/badge/cjcov-92.0-brightgreen" style="display: inline-block;" />
+<img alt="" src="https://img.shields.io/badge/cjcov-92.0%25-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/project-open-brightgreen" style="display: inline-block;" />
 </p>
 
@@ -102,6 +102,7 @@ internal import ohos.state_manage.LocalStorage
 internal import ohos.hilog.Hilog
 internal import ohos.resource_manager.*
 import ohos.component.SelectOption
+import std.collection.HashMap
 import ohos.component.Stack
 import ohos.component.Scroll
 import ohos.component.Select
@@ -121,12 +122,15 @@ import ohos.component.FontWeight
 import vap_cj.*
 import ohos.component.XComponent
 import ohos.component.XComponentType
+import std.collection.Map
 
 @Entry
 @Component
 public class GeneralAnimation {
     @State
     var vapController: VapController = VapController("GeneralAnimation")
+
+    public var map: Map<String, Int64> = HashMap<String, Int64>()
 
     @State
     var fitType: FitType = FitType.FIT_CENTER
@@ -136,6 +140,8 @@ public class GeneralAnimation {
 
     @State
     var text: String = "fix_center"
+
+    var videoName: String = "great_gift.mp4"
 
     func viewInit() {
         println("GeneralAnimation")
@@ -212,12 +218,11 @@ public class GeneralAnimation {
     private func play(): Unit {
         try {
             var rootPath = globalAbilityContext.getOrThrow().resourceDir
-            var filePath = "${rootPath}/great_gift.mp4"
+            var filePath = "${rootPath}/" + videoName
             let opts: ArrayList<CangjieMixData> = ArrayList<CangjieMixData>();
             this.vapController.setFitType(this.fitType)
             this.vapController.setVideoMode(VideoMode.VIDEO_MODE_SPLIT_HORIZONTAL)
 
-            this.vapController.setDownloadAttribute(50000, download)
             this.vapController.setLoop(1)
             this.buttonEnabled = false
             this.vapController.play(filePath, opts, cbFn)
@@ -227,7 +232,6 @@ public class GeneralAnimation {
     }
 
     private func pause(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  pause =========", "pause")
         try {
             this.vapController.pause()
         } catch (e: Exception) {
@@ -236,7 +240,6 @@ public class GeneralAnimation {
     }
 
     private func stop(): Unit {
-        Hilog.info(0, "=======VAPXAnimation  stop =========", "stop")
         try {
             this.vapController.stop()
         } catch (e: Exception) {
@@ -255,11 +258,7 @@ public class GeneralAnimation {
     func cbFn(): Unit {
         this.buttonEnabled = true
         Hilog.info(0, "=======GeneralAnimation  cbFn =========", "-----GeneralAnimation--cbFn-")
-        // 触发应用侧回调
-    }
 
-    func download(data: DownLoadData): Unit {
-        Hilog.info(0, "=======download  DownLoadData =========", "-----download  DownLoadData-")
     }
 }
 ```
@@ -268,12 +267,12 @@ public class GeneralAnimation {
 ## 约束与限制
 
 支持视频格式:
-- .mp4 .m3u8 .mov
+- .mp4
 
 在下述版本验证通过：
 
     DevEco Studio 5.1.1 Release(5.1.1.840)
-
+    SdkVersion需使用支持19及以上版本
 
 ## 开源协议 License
 

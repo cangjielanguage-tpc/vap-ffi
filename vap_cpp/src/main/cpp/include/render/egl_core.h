@@ -5,16 +5,16 @@
 #ifndef NATIVE_XCOMPONENT_EGL_CORE_H
 #define NATIVE_XCOMPONENT_EGL_CORE_H
 
+#include "data_info.h"
+#include "mask_render.h"
+#include "mix_render.h"
+#include "yuv_render.h"
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES3/gl3.h>
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include "mask_render.h"
-#include "mix_render.h"
-#include "data_info.h"
-#include "yuv_render.h"
 
 struct RenderData {
     std::vector<uint8_t> data;
@@ -27,42 +27,36 @@ class EGLCore {
 public:
     explicit EGLCore(){};
     ~EGLCore() {}
-    bool EglContextInit(void* window);
+    bool EglContextInit(void *window);
 
     bool EglContextInit1(EGLNativeWindowType window, int width, int height, std::string uri,
-        std::map<std::string, MixInputData> &iptData);
+                         std::map<std::string, MixInputData> &iptData);
 
     bool CreateEnvironment();
-    void Draw(int& hasDraw);
+    void Draw(int &hasDraw);
     void Background();
-    void ChangeColor(int& hasChangeColor);
+    void ChangeColor(int &hasChangeColor);
     void Release();
-    
-    void SetFitType(VideoFitType fitType)
-    {
-        m_fitType = fitType;
-    }
-    void SetVideoMode(VideoMode videoMode)
-    {
+
+    void SetFitType(VideoFitType fitType) { m_fitType = fitType; }
+    void SetVideoMode(VideoMode videoMode) {
         m_defaultVideoMode = videoMode;
         if (m_animConfig) {
             m_animConfig->isDefaultConfig = true;
         }
     }
-    void SetVideoSize(int32_t width, int32_t height, std::string mime)
-    {
+    void SetVideoSize(int32_t width, int32_t height, std::string mime) {
         m_videoWidth = width;
         m_videoHeight = height;
         m_isH265 = mime == MIME_VIDEO_HEVC;
     }
-    
+
     void Render(RenderData &renderData);
-    bool SeparateYUV(const std::vector<uint8_t> &data,
-        int alignWidth, int alignHeight, int videoWidth, int videoHeight);
+    bool SeparateYUV(const std::vector<uint8_t> &data, int alignWidth, int alignHeight, int videoWidth,
+                     int videoHeight);
     bool FinishLoad();
-    
-    void UpdateSize(int width, int height)
-    {
+
+    void UpdateSize(int width, int height) {
         LOGI("enter UpdateSize %{public}d * %{public}d ", width, height);
         m_width = width;
         m_height = height;
@@ -71,13 +65,12 @@ public:
     std::shared_ptr<AnimConfig> m_animConfig;
 
 private:
-    GLuint LoadShader(GLenum type, const char * shaderSrc);
-    GLuint CreateProgram(const char* vertexShader, const char* fragShader);
     GLint PrepareDraw();
-    bool ExecuteDraw(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long vertSize);
-    bool ExecuteDrawStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long vertSize);
-    bool ExecuteDrawNewStar(GLint position, const GLfloat* color, const GLfloat shapeVertices[], unsigned long vertSize);
-    void Rotate2d(GLfloat centerX, GLfloat centerY, GLfloat* rotateX, GLfloat* rotateY, GLfloat theta);
+    bool ExecuteDraw(GLint position, const GLfloat *color, const GLfloat shapeVertices[], unsigned long vertSize);
+    bool ExecuteDrawStar(GLint position, const GLfloat *color, const GLfloat shapeVertices[], unsigned long vertSize);
+    bool ExecuteDrawNewStar(GLint position, const GLfloat *color, const GLfloat shapeVertices[],
+                            unsigned long vertSize);
+    void Rotate2d(GLfloat centerX, GLfloat centerY, GLfloat *rotateX, GLfloat *rotateY, GLfloat theta);
     bool FinishDraw();
 
     VideoMode m_defaultVideoMode = VIDEO_MODE_SPLIT_HORIZONTAL;
@@ -105,14 +98,14 @@ private:
     std::unique_ptr<class YuvRender> m_render = nullptr;
     std::unique_ptr<class MixRender> m_mixRender = nullptr;
     std::unique_ptr<MaskRender> m_maskRender = nullptr;
-    
+
     int32_t m_frameCurIdx;
     VideoFitType m_fitType = VideoFitType::FIT_XY;
     int32_t m_viewportWidth = 0;
     int32_t m_viewportHeight = 0;
     int32_t m_viewportX = 0;
     int32_t m_viewportY = 0;
-    
+
     int32_t m_videoWidth = 0;
     int32_t m_videoHeight = 0;
     bool m_isH265 = false;

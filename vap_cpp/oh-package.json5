@@ -5,7 +5,5 @@
   "main": "",
   "author": "",
   "license": "Apache-2.0",
-  "dependencies": {
-    //"libvap_cpp.so": "file:./src/main/cpp/types/libvap_cpp"
-  }
+  "dependencies": {}
 }

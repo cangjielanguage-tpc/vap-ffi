@@ -12,12 +12,10 @@ GLuint ShaderUtil::CreateProgram(const char *vertexSource, const char *fragmentS
 {
     GLuint vertexShaderHandle = CompileShader(GL_VERTEX_SHADER, vertexSource);
     if (!vertexShaderHandle) {
-        LOGE("CompileShader: vertexShaderHandle error");
         return 0;
     }
     GLuint fragmentShaderHandle = CompileShader(GL_FRAGMENT_SHADER, fragmentSource);
     if (!fragmentShaderHandle) {
-        LOGE("CompileShader: fragmentSource error");
         glDeleteShader(vertexShaderHandle);
         return 0;
     }
@@ -28,7 +26,6 @@ GLuint ShaderUtil::CompileShader(GLenum shaderType, const char *shaderSource)
 {
     GLuint shaderHandle = glCreateShader(shaderType);
     if (shaderHandle == 0) {
-        LOGE("CompileShader error");
         return 0;
     }
     
@@ -43,7 +40,6 @@ GLuint ShaderUtil::CompileShader(GLenum shaderType, const char *shaderSource)
         if (infoLen > 1) {
             std::string infoLog(infoLen, '\0');
             glGetShaderInfoLog(shaderHandle, infoLen, nullptr, (GLchar *)&infoLog);
-            LOGE("Error compiling shader:%{public}s\n", infoLog.c_str());
         }
 
         glDeleteShader(shaderHandle);
@@ -63,13 +59,11 @@ GLuint ShaderUtil::CreateAndLinkProgram(GLuint vertexShaderHandle, GLuint fragme
         glLinkProgram(programHandle);
         glGetProgramiv(programHandle, GL_LINK_STATUS, &linkStatus);
         if (!linkStatus) {
-            LOGE("CreateProgram linked error");
             GLint infoLen = 0;
             glGetProgramiv(programHandle, GL_INFO_LOG_LENGTH, &infoLen);
             if (infoLen > 1) {
                 std::string infoLog(infoLen, '\0');
                 glGetProgramInfoLog(programHandle, infoLen, nullptr, (GLchar *)&infoLog);
-                LOGE("Error linking program:%{public}s\n", infoLog.c_str());
             }
             glDeleteProgram(programHandle);
             return 0;

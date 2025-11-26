@@ -2,13 +2,12 @@
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  */
 package vap_cj
-import std.unicode.UnicodeStringExtension
 
 import std.convert.*
 import std.collection.*
 import std.collection.concurrent.*
 import ohos.component.*
-import ohos.system_date_time.SystemDateTime
+import std.fs.exists
 
 @FastNative
 foreign {
@@ -54,6 +53,7 @@ public let loops: String = "Loops";
 
 public var loopsMap: ConcurrentHashMap<String, VapController> = ConcurrentHashMap<String, VapController>()
 
+public var cbFnMap: ArrayList<Option<() -> Unit>> = ArrayList<Option<() -> Unit>>()
 
 public var playTimeMap: Map<Int64, Int64> = HashMap<Int64, Int64>()
 
@@ -68,8 +68,8 @@ struct CJInt64Array{
     }
 }
 
-func cbFn(): Unit {
-}
+func cbFn(): Unit {}
+
 @C
 func doneFn2(): Unit {
     let that: VapController = loopsMap[loops]
@@ -79,7 +79,7 @@ func doneFn2(): Unit {
     } else {
         that.loops = 1
         if (let Some(v) <- that.jsCbfn) {
-            v()
+           v()
         }
         that.isRunning = false
     }
@@ -87,11 +87,12 @@ func doneFn2(): Unit {
 
 @C
 func onStateChange(state: Int64, ret: Int64): Unit {
-    Hilog.info(0, "VapController onStateChange", "VapController onStateChange-state: ${state},ret: ${ret}")
+    Hilog.info(0, "onStateChange  state", "onStateChange state: ${state}, ret: ${ret}")
 }
 
 public class VapController <: XComponentController{
     public var loops: Int64 = 1
+    public var loops1: Int64 = 1
     public var isRunning: Bool = false
     public var jsCbfn: Option<() -> Unit> = None
     var downloadFile = DownloadFile()
@@ -152,8 +153,13 @@ public class VapController <: XComponentController{
     }
 
     public var callback3: () -> Unit = {=>()}
-    public func play(uri: String, mixData: ArrayList<CangjieMixData>, cbFn: () -> Unit) {
+    public func play(uri: String, mixData: ArrayList<CangjieMixData>, cbFn: () -> Unit): Unit {
         unsafe {
+            if (!exists(uri)) {
+                Hilog.error(0, "VapController play", "The animation path is not valid")
+                cbFn()
+                return;
+            }
             let mixDatas: Array<CangjieMixData> = getMixDatas(mixData)
             if (!mixData.isEmpty()) {
                 this.mixData = ArrayList<CangjieMixData>()
@@ -162,7 +168,7 @@ public class VapController <: XComponentController{
                         var downloadFile: String = this
                             .downloadFile.downloadFile(mixData[i].imgUri.toString(), this.sandDir)
                         var item = mixData[i]
-                        item.setImgUri(LibC.mallocCString(downloadFile))
+//                        item.setImgUri(LibC.mallocCString(downloadFile))
                         mixData[i] = item
                     }
                     let cangjieMixData: CangjieMixData = CangjieMixData(mixData[i].tag.toString(),
@@ -180,7 +186,11 @@ public class VapController <: XComponentController{
             var cUri = LibC.mallocCString(uri)
 
             var mixDataArray = mixData.toArray()
-            this.jsCbfn = cbFn
+            cbFnMap.add(cbFn)
+            if(this.loops1 == this.loops){
+                Hilog.error(0, "VapController play", "-----this.loops-:${this.loops}---")
+                this.jsCbfn = cbFn
+            }
             setGlobalLoops()
             CangjiePluginRenderPlay(cUri, cangjieData, Int64(mixDatas.size), doneFn2, id)
         }
@@ -235,6 +245,7 @@ public class VapController <: XComponentController{
 
     public func setLoop(loops: Int64): Unit {
         this.loops = loops
+        this.loops1 = loops
         setGlobalLoops()
         unsafe {
             CangjiePluginRenderSetLoop(this.loops, id)

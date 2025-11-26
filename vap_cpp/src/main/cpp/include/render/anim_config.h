@@ -25,7 +25,7 @@ enum Orien {
 
 enum VideoMode {
     // 视频对齐方式 (兼容老版本视频模式)
-    VIDEO_MODE_SPLIT_HORIZONTAL = 1, // 视频左右对齐（alpha左\rgb右）
+    VIDEO_MODE_SPLIT_HORIZONTAL, // 视频左右对齐（alpha左\rgb右）
     VIDEO_MODE_SPLIT_VERTICAL, // 视频上下对齐（alpha上\rgb下）
     VIDEO_MODE_SPLIT_HORIZONTAL_REVERSE, // 视频左右对齐（rgb左\alpha右）
     VIDEO_MODE_SPLIT_VERTICAL_REVERSE // 视频上下对齐（rgb上\alpha下）

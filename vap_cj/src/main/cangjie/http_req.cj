@@ -29,7 +29,6 @@ public class DownloadFile {
             {
                 err, resp =>
                 if (let Some(e) <- err) {
-
                     Hilog.error(0, "DownloadFile downloadFile err", "exception: ${e.message}")
                 }
                 if (let Some(r) <- resp) {
@@ -63,9 +62,6 @@ public class DownloadFile {
     }
 
     public func writeFile(filePath: String, buf: Array<UInt8>): Unit {
-        //let file = fs.openSync(filePath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-        //  fs.writeSync(file.fd, buf);
-        //  fs.closeSync(file);
-
+        Hilog.info(0, "writeFile  filePath", "writeFile  filePath: ${filePath}, buf size: ${buf.size}")
     }
 }

@@ -45,7 +45,7 @@ public class VapController {
     /*
      * 视频对齐方式（支持FIT_XY,FIT_CENTER,CENTER_CROP）
      *
-     * 参数 fitType - 对齐方式
+     * 参数 FitType - 对齐方式 枚举类限定
      *
      * 返回值 Unit
      */
@@ -54,7 +54,7 @@ public class VapController {
     /*
      * 兼容老视频
      *
-     * 参数 videoMode - 兼容方式
+     * 参数 VideoMode - 兼容方式 枚举类限定
      *
      * 返回值 Unit
      */
@@ -63,20 +63,11 @@ public class VapController {
     /*
      * 获取兼容老视频
      *
-     * 参数 that - 兼容老视频类型
+     * 参数 VideoMode - 兼容老视频类型 枚举类限定
      *
      * 返回值 Int64
      */
     public func getVideoMode(that: VideoMode): Int64
-    
-    /*
-     * 获取视频对齐方式
-     *
-     * 参数 that - 对齐方式
-     *
-     * 返回值 Int64
-     */
-    public func getFitType(that: FitType): Int64
 }
 ```
 
@@ -112,13 +103,13 @@ public enum FitType {
     public func getFitType(that: Int32): FitType
     
     /*
-     * 视频对齐方式转化为数字
+     * 获取视频对齐方式
      *
-     * 参数 that - 对齐方式
+     * 参数 that - 对齐方式 枚举类限定
      *
      * 返回值 Int64
      */
-    public func getFitType(that: FitType): Int32
+    public func getFitType(that: FitType): Int64
 }
 ```
 
@@ -176,35 +167,9 @@ public struct CangjieMixData {
      * 参数 tag - 标记
      * 参数 txt - 文本信息
      * 参数 imgUri - 视频路径字符串类型
-     * 参数 colorA - 动画颜色a
-     * 参数 colorR - 动画颜色r
-     * 参数 colorG - 动画颜色g
-     * 参数 colorB - 动画颜色b
-     * 参数 vapFontWeight - 字体粗细属性
-     * 参数 vapTextAlign - 文本水平对齐方式
-     *
-     */
-    public init(tag: String, txt: String, imgUri: String, colorA: Int64, colorR: Int64, colorG: Int64, colorB: Int64,
-        vapFontWeight: Int32, vapTextAlign: Int32)
-    
-    /*
-     * 动画参数构造方法
-     *
-     * 参数 tag - 标记
-     * 参数 txt - 文本信息
-     * 参数 imgUri - 视频路径字符串类型
      *
      */
     public init(tag: String, txt: String, imgUri: String)
-    
-    /*
-     * 视频对齐方式转化为数字
-     *
-     * 参数 str - 设置CString类型的视频路径
-     *
-     * 返回值 Unit
-     */
-    public mut func setImgUri(str: CString):Unit
 }
 ```
 

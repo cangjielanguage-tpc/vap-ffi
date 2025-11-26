@@ -18,7 +18,6 @@ void OnCodecError(OH_AVCodec *codec, int32_t errorCode, void *userData)
     (void)codec;
     (void)errorCode;
     (void)userData;
-    LOGE("On codec error, error code: %{public}d", errorCode);
 }
 
 void OnCodecFormatChange(OH_AVCodec *codec, OH_AVFormat *format, void *userData)
@@ -60,7 +59,6 @@ int32_t AudioDecoder::CreateAudioDecoder(const std::string &codecMime)
 {
     decoder_ = OH_AudioCodec_CreateByMime(codecMime.c_str(), false);
     if (decoder_ == nullptr) {
-        LOGE("create audio decoder_ failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -72,7 +70,6 @@ int32_t AudioDecoder::SetCallback(ADecSignal *signal)
     ret = OH_AudioCodec_RegisterCallback(decoder_, {OnCodecError, OnCodecFormatChange,
                                             OnNeedInputBuffer, OnNewOutputBuffer}, signal);
     if (ret != AV_ERR_OK) {
-        LOGE("Set callback failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -82,7 +79,6 @@ int32_t AudioDecoder::ConfigureAudioDecoder(const VAPInfo &sampleInfo)
 {
     OH_AVFormat *format = OH_AVFormat_Create();
     if (format == nullptr) {
-        LOGE("AVFormat create failed");
         return AV_ERR_UNKNOWN;
     }
     OH_AVFormat_SetIntValue(format, OH_MD_KEY_AUD_SAMPLE_RATE, sampleInfo.sampleRate);
@@ -90,13 +86,11 @@ int32_t AudioDecoder::ConfigureAudioDecoder(const VAPInfo &sampleInfo)
     OH_AVFormat_SetIntValue(format, OH_MD_KEY_AUD_CHANNEL_COUNT, sampleInfo.channelCount);
     if (strcmp(sampleInfo.audioCodecMime.c_str(), "audio/mp4a-latm") == 0) {
         OH_AVFormat_SetIntValue(format, OH_MD_KEY_AAC_IS_ADTS, 1);
-        LOGD("audio mime is aac");
     } else {
         LOGD("audio mime is not aac");
     }
     int ret = OH_AudioCodec_Configure(decoder_, format);
     if (ret != AV_ERR_OK) {
-        LOGE("Config failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
     OH_AVFormat_Destroy(format);
@@ -108,29 +102,24 @@ int32_t AudioDecoder::ConfigureAudioDecoder(const VAPInfo &sampleInfo)
 int32_t AudioDecoder::Config(const VAPInfo &sampleInfo, ADecSignal *signal)
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
     if (signal == nullptr) {
-        LOGE("Invalid param: codecUserData");
         return AV_ERR_UNKNOWN;
     }
 
     int32_t ret = ConfigureAudioDecoder(sampleInfo);
     if (ret != AV_ERR_OK) {
-        LOGE("Configure failed");
         return AV_ERR_UNKNOWN;
     }
     
     ret = SetCallback(signal);
     if (ret != AV_ERR_OK) {
-        LOGE("Set callback failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
     
     ret = OH_AudioCodec_Prepare(decoder_);
     if (ret != AV_ERR_OK) {
-        LOGE("audio Prepare failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -139,13 +128,11 @@ int32_t AudioDecoder::Config(const VAPInfo &sampleInfo, ADecSignal *signal)
 int32_t AudioDecoder::StartAudioDecoder()
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
 
     int ret = OH_AudioCodec_Start(decoder_);
     if (ret != AV_ERR_OK) {
-        LOGE("audio Start failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -154,17 +141,14 @@ int32_t AudioDecoder::StartAudioDecoder()
 int32_t AudioDecoder::PushInputData(AudioCodecBufferInfo &info)
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
     int32_t ret = OH_AVBuffer_SetBufferAttr(info.bufferOrigin, &info.attr);
     if (ret != AV_ERR_OK) {
-        LOGE("Set avbuffer attr failed");
         return AV_ERR_UNKNOWN;
     }
     ret = OH_AudioCodec_PushInputBuffer(decoder_, info.bufferIndex);
     if (ret != AV_ERR_OK) {
-        LOGE("Push input data failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -173,14 +157,12 @@ int32_t AudioDecoder::PushInputData(AudioCodecBufferInfo &info)
 int32_t AudioDecoder::FreeOutputData(uint32_t bufferIndex, bool render)
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
 
     int32_t ret = AV_ERR_OK;
     ret = OH_AudioCodec_FreeOutputBuffer(decoder_, bufferIndex);
     if (ret != AV_ERR_OK) {
-        LOGE("audio Free output data failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;

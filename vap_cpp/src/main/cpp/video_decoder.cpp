@@ -22,7 +22,6 @@ int32_t VideoDecoder::CreateVideoDecoder(const std::string &codecMime)
 {
     decoder_ = OH_VideoDecoder_CreateByMime(codecMime.c_str());
     if (decoder_ == nullptr) {
-        LOGE("create decoder_ failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -36,7 +35,6 @@ int32_t VideoDecoder::SetCallback(VDecSignal *signal)
                                             VAPCallback::OnNeedInputBuffer, VAPCallback::OnNewOutputBuffer},
                                            signal);
     if (ret != AV_ERR_OK) {
-        LOGE("Set callback failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -46,7 +44,6 @@ int32_t VideoDecoder::ConfigureVideoDecoder(const VAPInfo &info)
 {
     OH_AVFormat *format = OH_AVFormat_Create();
     if (format == nullptr) {
-        LOGE("AVFormat create failed");
         return AV_ERR_UNKNOWN;
     }
     OH_AVFormat_SetIntValue(format, OH_MD_KEY_WIDTH, info.videoWidth);
@@ -57,7 +54,6 @@ int32_t VideoDecoder::ConfigureVideoDecoder(const VAPInfo &info)
         info.videoHeight, info.frameRate);
     int ret = OH_VideoDecoder_Configure(decoder_, format);
     if (ret != AV_ERR_OK) {
-        LOGE("Config failed, ret: %{public}d", ret); // 9 AV_ERR_UNSUPPORT
         return AV_ERR_UNKNOWN;
     }
     OH_AVFormat_Destroy(format);
@@ -69,25 +65,21 @@ int32_t VideoDecoder::ConfigureVideoDecoder(const VAPInfo &info)
 int32_t VideoDecoder::Config(const VAPInfo &info, VDecSignal *signal)
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
     if (signal == nullptr) {
-        LOGE("Invalid param: codecUserData");
         return AV_ERR_UNKNOWN;
     }
 
     // Configure video decoder_
     int32_t ret = ConfigureVideoDecoder(info);
     if (ret != AV_ERR_OK) {
-        LOGE("Configure failed");
         return AV_ERR_UNKNOWN;
     }
 
     // SetCallback for video decoder_
     ret = SetCallback(signal);
     if (ret != AV_ERR_OK) {
-        LOGE("Set callback failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
 
@@ -95,7 +87,6 @@ int32_t VideoDecoder::Config(const VAPInfo &info, VDecSignal *signal)
     {
         int ret = OH_VideoDecoder_Prepare(decoder_);
         if (ret != AV_ERR_OK) {
-            LOGE("Prepare failed, ret: %{public}d", ret);
             return AV_ERR_UNKNOWN;
         }
     }
@@ -105,13 +96,11 @@ int32_t VideoDecoder::Config(const VAPInfo &info, VDecSignal *signal)
 int32_t VideoDecoder::StartVideoDecoder()
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
     
     int ret = OH_VideoDecoder_Start(decoder_);
     if (ret != AV_ERR_OK) {
-        LOGE("Start failed, ret: %{public}d", ret);
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -120,17 +109,14 @@ int32_t VideoDecoder::StartVideoDecoder()
 int32_t VideoDecoder::PushInputData(CodecBufferInfo &info)
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
     int32_t ret = OH_AVBuffer_SetBufferAttr(reinterpret_cast<OH_AVBuffer *>(info.buffer), &info.attr);
     if (ret != AV_ERR_OK) {
-        LOGE("Set avbuffer attr failed");
         return AV_ERR_UNKNOWN;
     }
     ret = OH_VideoDecoder_PushInputBuffer(decoder_, info.bufferIndex);
     if (ret != AV_ERR_OK) {
-        LOGE("Push input data failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -139,7 +125,6 @@ int32_t VideoDecoder::PushInputData(CodecBufferInfo &info)
 int32_t VideoDecoder::FreeOutputData(uint32_t bufferIndex, bool render)
 {
     if (decoder_ == nullptr) {
-        LOGE("Decoder is null");
         return AV_ERR_UNKNOWN;
     }
 
@@ -150,7 +135,6 @@ int32_t VideoDecoder::FreeOutputData(uint32_t bufferIndex, bool render)
         ret = OH_VideoDecoder_FreeOutputBuffer(decoder_, bufferIndex);
     }
     if (ret != AV_ERR_OK) {
-        LOGE("Free output data failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;

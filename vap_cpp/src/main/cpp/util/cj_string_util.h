@@ -6,10 +6,10 @@
 
 #include "data_info.h"
 #include <cstdint>
-extern "C"{
+extern "C" {
 namespace pag {
 CJBytesArray stringToCJBytesArray(const std::string &str);
-void safe_copy(void *dest,uint32_t dest_size, const void *src, uint32_t src_size);
-}
+void safe_copy(void *dest, uint32_t dest_size, const void *src, uint32_t src_size);
+} // namespace pag
 }
 #endif // LIBPAG4CJ_CJ_STRING_UTIL_H

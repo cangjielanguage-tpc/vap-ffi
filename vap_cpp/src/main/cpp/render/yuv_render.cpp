@@ -130,7 +130,6 @@ GLuint YuvRender::GetExternalTexture()
 void YuvRender::SetAnimConfig(std::shared_ptr<AnimConfig> animConfig)
 {
     if (!animConfig) {
-        LOGE("YuvRender animConfig nullptr");
         return;
     }
     PointRect pointRect(ZERO, ZERO, animConfig->width, animConfig->height);

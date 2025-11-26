@@ -15,25 +15,21 @@ int32_t Demuxer::CreateDemuxer(VAPInfo &info)
 {
     source_ = OH_AVSource_CreateWithFD(info.inputFd, info.inputFileOffset, info.inputFileSize);
     if (source_ == nullptr) {
-        LOGE("create source_ failed");
         return AV_ERR_UNKNOWN;
     }
 
     demuxer_ = OH_AVDemuxer_CreateWithSource(source_);
     if (demuxer_ == nullptr) {
-        LOGE("create demuxer_ failed");
         return AV_ERR_UNKNOWN;
     }
 
     auto sourceFormat = std::shared_ptr<OH_AVFormat>(OH_AVSource_GetSourceFormat(source_), OH_AVFormat_Destroy);
     if (sourceFormat == nullptr) {
-        LOGE("get source_ format failed");
         return AV_ERR_UNKNOWN;
     }
 
     int32_t ret = GetTrackInfo(sourceFormat, info);
     if (ret != AV_ERR_OK) {
-        LOGE("get track info failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -62,8 +58,6 @@ int32_t Demuxer::GetTrackInfo(std::shared_ptr<OH_AVFormat> sourceFormat, VAPInfo
             OH_AVFormat_GetIntValue(trackFormat.get(), OH_MD_KEY_PROFILE, &info.hevcProfile);
             videoTrackId_ = index;
 
-            LOGI("Demuxer config: %{public}d*%{public}d, %{public}.1ffps, %{public}ld" "kbps",
-                info.videoWidth, info.videoHeight, info.frameRate, info.bitrate / ONE_K);
         } else if (trackType == MEDIA_TYPE_AUD) {
             OH_AVDemuxer_SelectTrackByID(demuxer_, index);
             OH_AVFormat_GetLongValue(trackFormat.get(), OH_MD_KEY_BITRATE, &info.audioBitrate);
@@ -90,13 +84,11 @@ int32_t Demuxer::ReadSample(OH_AVBuffer *buffer, OH_AVCodecBufferAttr &attr)
 {
     int32_t ret = OH_AVDemuxer_ReadSampleBuffer(demuxer_, videoTrackId_, buffer);
     if (ret != AV_ERR_OK) {
-        LOGE("read sample failed");
         return AV_ERR_UNKNOWN;
     }
     
     ret = OH_AVBuffer_GetBufferAttr(buffer, &attr);
     if (ret != AV_ERR_OK) {
-        LOGE("get buffer attr failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
@@ -106,13 +98,11 @@ int32_t Demuxer::ReadAudioSample(OH_AVBuffer *buffer, OH_AVCodecBufferAttr &attr
 {
     int32_t ret = OH_AVDemuxer_ReadSampleBuffer(demuxer_, audioTrackId_, buffer);
     if (ret != AV_ERR_OK) {
-        LOGE("read audio sample failed");
         return AV_ERR_UNKNOWN;
     }
 
     ret = OH_AVBuffer_GetBufferAttr(buffer, &attr);
     if (ret != AV_ERR_OK) {
-        LOGE("get audio buffer attr failed");
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;

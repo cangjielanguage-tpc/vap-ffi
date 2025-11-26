@@ -45,8 +45,6 @@ public class VAPXAnimation {
     @State
     var buttonEnabled: Bool = true;
 
-    var srcInfo: Array<SrcInfo> = Array<SrcInfo>()
-
     var srcType: SrcType = SrcType.UNKNOWN
     @State
     var vapController: VapController = VapController("VAPXAnimation")
@@ -117,17 +115,14 @@ public class VAPXAnimation {
     var fontWeight: VAPFontWeight = VAPFontWeight.NORMAL;
 
     public func onPageShow() {
-        println("onPageShow")
         this.showColor = (((this.color.r & 0xff) << 16) | ((this.color.g & 0xff) << 8) | ((this.color.b & 0xff)))
     }
 
     public func onPageHide() {
-        println("onPageHide")
         this.vapController.stop()
     }
 
     public func viewInit() {
-        println("VAPXAnimation")
     }
 
     public func build() {
@@ -249,37 +244,15 @@ public class VAPXAnimation {
         try {
             var rootPath = globalAbilityContext.getOrThrow().resourceDir
             var filePath = "${rootPath}/" + videoName
-            this.srcInfo = this.vapController.getVideoInfo(filePath)
             this.vapController.setFitType(this.fitType)
             this.vapController.setLoop(1)
-            let mixDatas: Array<CangjieMixData> = []
-            if (!this.srcInfo.isEmpty()) {
-                for (i in 0..this.srcInfo.size-1) {
-                    if (this.srcInfo[i].srcType == this.srcType.getSrcTypeInt(SrcType.IMG)) {
-                        mixDatas[i] = CangjieMixData(this.srcInfo[i].tag, "", "图片地址")
-                    } else if (this.srcInfo[i].srcType == this.srcType.getSrcTypeInt(SrcType.TXT)) {
-                        mixDatas[i] = CangjieMixData(this.srcInfo[i].tag, '文本信息', "",
-                            this.color.a, this.color.r, this.color.g, this.color.b)
-                    }
-                }
-            } else {
-                Hilog.info(0, "error not get srcInfo", "error not get srcInfo")
-            }
             let opts: ArrayList<CangjieMixData> = ArrayList() //TODO
-            if(!this.srcInfo.isEmpty()){
-                for (i in 0..this.srcInfo.size-1) {
-                    if(this.srcInfo[i].srcType == this.srcType.getSrcTypeInt(SrcType.IMG)){
-                        var opt: CangjieMixData = CangjieMixData(this.srcInfo[i].tag, "", filePath + '/head1.png')
-                        opts.add(opt)
-                    } else if(this.srcInfo[i].srcType == this.srcType.getSrcTypeInt(SrcType.TXT)){
-                        var opt: CangjieMixData = CangjieMixData(this.srcInfo[i].tag, "星河Harmony NEXT","",
+            var opt: CangjieMixData = CangjieMixData("tag1", "",  '${rootPath}/head1.png')
+            var opt1: CangjieMixData = CangjieMixData("sTxt1", "星河Harmony NEXT","",
                             this.color.a, this.color.r, this.color.g, this.color.b, this.fontWeight.getFontWeightF(this.fontWeight),
                             this.textAlign.getVAPTextAlignF(this.textAlign))
-                        opts.add(opt)
-                    }
-                }
-            }
-
+            opts.add(opt)
+            opts.add(opt1)
             this.buttonEnabled = false
             this.vapController.play(filePath, opts, cbFn) // TODO
         } catch (e: Exception) {

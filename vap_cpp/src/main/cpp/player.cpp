@@ -4,16 +4,14 @@
 
 #include "player.h"
 
+#include "log.h"
+#include "vap_callback.h"
 #include <chrono>
 #include <cstdint>
 #include <memory>
 #include <multimedia/player_framework/native_averrors.h>
-#include <fcntl.h>
 #include <mutex>
-#include <sys/stat.h>
 #include <vector>
-#include "log.h"
-#include "vap_callback.h"
 
 #undef LOG_TAG
 #define LOG_TAG "player"
@@ -22,50 +20,26 @@ namespace {
 using namespace std::chrono_literals;
 }
 
-Player::~Player()
+Player::~Player() 
 {
     callbackAll_ = nullptr;
     Stop();
     StartRelease();
-    if(renderThread_ && renderThread_->joinable()){
+    if (renderThread_ && renderThread_->joinable()) {
         renderThread_->join();
     }
 }
 
-static int32_t OpenFile(VAPInfo &info) {
-    const char *file = info.uri.c_str();
-    info.inputFd = -1;
-    info.inputFileSize = 0;
-    info.inputFileOffset = 0;
-    info.inputFd = open(file, O_RDONLY);
-    LOGD("Open file: fd = %{public}d", info.inputFd);
-    if (info.inputFd == -1) {
-        LOGE("cont open file");
-        return AV_ERR_UNKNOWN;
-    }
-
-    struct stat fileStatus {};
-    if (stat(file, &fileStatus) == 0) {
-        info.inputFileSize = static_cast<size_t>(fileStatus.st_size);
-        LOGD("Get stat:%{public}zu", info.inputFileSize);
-        return AV_ERR_OK;
-    } else {
-        LOGE("Get stat file size error");
-        return AV_ERR_UNKNOWN;
-    }
-}
-
-int32_t Player::InitAudio() {
+int32_t Player::InitAudio() 
+{
     audioDecoder_ = std::make_unique<AudioDecoder>();
     int32_t ret = audioDecoder_->CreateAudioDecoder(sampleInfo_.audioCodecMime);
     if (ret != AV_ERR_OK) {
-        LOGE("Create audio decoder failed");
         return AV_ERR_UNKNOWN;
     }
     audioSignal_ = new ADecSignal;
     ret = audioDecoder_->Config(sampleInfo_, audioSignal_);
     if (ret != AV_ERR_OK) {
-        LOGE("audio Decoder config failed");
         return AV_ERR_UNKNOWN;
     }
     AudioInitData audioInitData;
@@ -75,7 +49,8 @@ int32_t Player::InitAudio() {
     return AV_ERR_OK;
 }
 
-void Player::InitControlSignal() {
+void Player::InitControlSignal() 
+{
     if (sampleInfo_.frameRate <= 0) {
         sampleInfo_.frameRate = DEFAULT_FRAME_RATE;
     }
@@ -86,89 +61,28 @@ void Player::InitControlSignal() {
     isVideoEndOfFile_ = false;
 }
 
-int32_t Player::Init(VAPInfo &info) {
-    CallBackJS(VapState::READY, CallbackType::STATE_CHANGE);
+int32_t Player::Start() 
+{
     if (isStarted_) {
-        LOGE("Already started.");
-        return AV_ERR_UNKNOWN;
-    }
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (OpenFile(info) != AV_ERR_OK) {
-        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, AV_ERR_UNKNOWN);
-        return AV_ERR_UNKNOWN;
-    }
-
-    sampleInfo_ = info;
-    videoDecoder_ = std::make_unique<VideoDecoder>();
-    if (!videoDecoder_) {
-        LOGE("Create videoDecoder_ failed");
-        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, AV_ERR_UNKNOWN);
-        return AV_ERR_UNKNOWN;
-    }
-
-    demuxer_ = std::make_unique<Demuxer>();
-    int32_t ret = demuxer_->CreateDemuxer(sampleInfo_);
-    if (ret != AV_ERR_OK) {
-        LOGE("Create demuxer failed");
-        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, ret);
-        return AV_ERR_UNKNOWN;
-    }
-
-    ret = videoDecoder_->CreateVideoDecoder(sampleInfo_.codecMime);
-    if (ret != AV_ERR_OK) {
-        LOGE("Create video decoder failed");
-        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, ret);
-        return AV_ERR_UNKNOWN;
-    }
-
-    if (demuxer_->hasAudio()) {
-        ret = InitAudio();
-        if (ret != AV_ERR_OK) {
-            CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, ret);
-            return ret;
-        }
-    }
-    sampleInfo_.frameRate *= speed_;
-    // audioBitrate
-    signal_ = new VDecSignal;
-    ret = videoDecoder_->Config(sampleInfo_, signal_);
-    if (ret != AV_ERR_OK) {
-        LOGE("Decoder config failed");
-        return AV_ERR_UNKNOWN;
-    }
-
-    InitControlSignal();
-    LOGE("Init InitControlSignal");
-    return Start();
-}
-
-int32_t Player::Start() {
-    if (isStarted_) {
-        LOGE("Already started.");
         return AV_ERR_UNKNOWN;
     }
     if (!videoDecoder_ || !demuxer_) {
-        LOGE("Please Init first.");
         return AV_ERR_UNKNOWN;
     }
     isStarted_ = true;
     int32_t ret = videoDecoder_->StartVideoDecoder();
     if (ret != AV_ERR_OK) {
-        LOGE("Decoder start failed");
         return AV_ERR_UNKNOWN;
     }
     if (demuxer_->hasAudio()) {
-        LOGW("video has audio");
         ret = audioDecoder_->StartAudioDecoder();
         if (ret != AV_ERR_OK) {
-            LOGE("audio Decoder start failed");
             return AV_ERR_UNKNOWN;
         }
 
         decAudioInputThread_ = std::make_unique<std::thread>(&Player::DecAudioInputThread, this);
         decAudioOutputThread_ = std::make_unique<std::thread>(&Player::DecAudioOutputThread, this);
         if (decAudioInputThread_ == nullptr || decAudioOutputThread_ == nullptr) {
-            LOGE("Create thread failed");
             ReleaseAudio();
             return AV_ERR_UNKNOWN;
         }
@@ -176,29 +90,31 @@ int32_t Player::Start() {
 
     decInputThread_ = std::make_unique<std::thread>(&Player::DecInputThread, this);
     decOutputThread_ = std::make_unique<std::thread>(&Player::DecOutputThread, this);
-    
-    if(renderThread_ && renderThread_->joinable()){
+
+    if (renderThread_ && renderThread_->joinable()) {
         renderThread_->join();
     }
-    
+
     renderThread_ = std::make_unique<std::thread>(&Player::RenderThread, this);
     if (decInputThread_ == nullptr || decOutputThread_ == nullptr || renderThread_ == nullptr) {
-        LOGE("Create thread failed");
         Release();
         return AV_ERR_UNKNOWN;
     }
     return AV_ERR_OK;
 }
 
-void Player::StartRelease() {
+void Player::StartRelease() 
+{
     std::unique_lock<std::mutex> lock(mutex_);
-    if (isReleased_) return;
+    if (isReleased_)
+        return;
     CallBackJS(VapState::COMPLETE, CallbackType::STATE_CHANGE);
     ReleaseAudio();
     Release();
 }
 
-void Player::ReleaseAudio() {
+void Player::ReleaseAudio() 
+{
     if (audioRenderer_) {
         OH_AudioRenderer_Flush(audioRenderer_);
         OH_AudioRenderer_Release(audioRenderer_);
@@ -212,7 +128,7 @@ void Player::ReleaseAudio() {
         decAudioInputThread_->join();
         decAudioInputThread_.reset();
     }
-    
+
     if (decAudioOutputThread_ && decAudioOutputThread_->joinable()) {
         decAudioOutputThread_->join();
         decAudioOutputThread_.reset();
@@ -228,7 +144,8 @@ void Player::ReleaseAudio() {
     }
 }
 
-void Player::Release() {
+void Player::Release() 
+{
     if (decInputThread_ && decInputThread_->joinable()) {
         decInputThread_->join();
     }
@@ -262,7 +179,8 @@ void Player::Release() {
     ResetControlSignal();
 }
 
-void Player::ResetControlSignal() {
+void Player::ResetControlSignal() 
+{
     isStop_ = false;
     isStarted_ = false;
     isReleased_ = true;
@@ -278,11 +196,11 @@ void Player::ResetControlSignal() {
         context->callbackRef = callbackRefs_[CallbackType::PLAY_DONE];
         callbackAll_(context);
         callbackRefs_.erase(CallbackType::PLAY_DONE);
-        LOGD("play end callback");
     }
 }
 
-void Player::InitJSAnimConfig() {
+void Player::InitJSAnimConfig() 
+{
     if (eglCore_->m_animConfig) {
         jsAnimConfig_.version = eglCore_->m_animConfig->version;
         jsAnimConfig_.totalFrames = eglCore_->m_animConfig->totalFrames;
@@ -301,32 +219,27 @@ void Player::InitJSAnimConfig() {
     }
 }
 
-void Player::RenderThread() {
+void Player::RenderThread() 
+{
     eglCore_ = std::make_unique<EGLCore>();
-    LOGI("Player: RenderThread eglContext %{public}p %{public}d, %{public}d", sampleInfo_.window,
-        sampleInfo_.width, sampleInfo_.height);
     if (isSetVideoMode_) {
         eglCore_->SetVideoMode(defaultVideoMode_);
     }
     eglCore_->SetVideoSize(sampleInfo_.videoWidth, sampleInfo_.videoHeight, sampleInfo_.codecMime);
     eglCore_->SetFitType(fitType_);
     if (!eglCore_->EglContextInit1(sampleInfo_.window, sampleInfo_.width, sampleInfo_.height, sampleInfo_.uri,
-        sampleInfo_.iptData)) {
-        LOGE("Player: Unable to init eglContext");
+                                   sampleInfo_.iptData)) {
     }
     InitJSAnimConfig();
     CallBackJS(VapState::START, CallbackType::STATE_CHANGE);
     while (!isStop_ && isStarted_) {
         thread_local auto lastPushTime = std::chrono::system_clock::now();
         if (isVideoEndOfFile_) {
-            LOGE("Decoder render end.");
             break;
         }
         std::unique_lock<std::mutex> lock(renderMutex_);
-        bool condRet = renderCond_.wait_for(
-            lock, 300ms, [this]() { return !renderQueue_.empty(); });
+        bool condRet = renderCond_.wait_for(lock, 300ms, [this]() { return !renderQueue_.empty(); });
         if (renderQueue_.empty()) {
-            LOGE("RenderThread no data");
             continue;
         }
         std::vector<uint8_t> buffer = renderQueue_.front();
@@ -334,12 +247,9 @@ void Player::RenderThread() {
         lock.unlock();
         if (eglCore_) {
             renderFrameCurIdx_++;
-            LOGD("renderFrameCurIdx_1: %{public}d frameCurIdx_: %{public}d", renderFrameCurIdx_, frameCurIdx_);
             if (renderFrameCurIdx_ < frameCurIdx_) {
-                LOGD("renderFrameCurIdx_2: %{public}d frameCurIdx_: %{public}d", renderFrameCurIdx_, frameCurIdx_);
                 continue;
             }
-            LOGD("renderFrameCurIdx_3: %{public}d frameCurIdx_: %{public}d", renderFrameCurIdx_, frameCurIdx_);
             RenderData renderData = {buffer, stride_, sliceHeight_, frameCurIdx_};
             eglCore_->Render(renderData);
             CallBackJS(VapState::RENDER, CallbackType::STATE_CHANGE);
@@ -352,17 +262,16 @@ void Player::RenderThread() {
     StartRelease();
 }
 
-void Player::DecInputThread() {
+void Player::DecInputThread() 
+{
     while (!isStop_ && isStarted_) {
         std::unique_lock<std::mutex> lock(signal_->inputMutex);
         bool condRet = signal_->inputCond.wait_for(
             lock, 300ms, [this]() { return !isStarted_ || !signal_->inputBufferInfoQueue.empty(); });
         if (!isStarted_) {
-            LOGE("Work done, thread out");
             break;
         }
         if (signal_->inputBufferInfoQueue.empty()) {
-            LOGE("DecInputThread Buffer queue is empty, continue, cond ret: %{public}d", condRet);
             continue;
         }
 
@@ -372,63 +281,56 @@ void Player::DecInputThread() {
         lock.unlock();
 
         if (!bufferInfo.buffer) {
-            LOGE("DecInputThread bufferInfo buffer empty, continue");
             continue;
         }
         demuxer_->ReadSample(reinterpret_cast<OH_AVBuffer *>(bufferInfo.buffer), bufferInfo.attr);
         int32_t ret = videoDecoder_->PushInputData(bufferInfo);
         if (ret != AV_ERR_OK) {
-            LOGE("Push data failed, thread out");
             break;
         }
 
         if (bufferInfo.attr.flags & AVCODEC_BUFFER_FLAGS_EOS) {
-            LOGE("Catch EOS, in thread out");
             break;
         }
     }
-    LOGI("DecInputThread exit");
 }
 
-void Player::GetBufferData(CodecBufferInfo bufferInfo) {
+void Player::GetBufferData(CodecBufferInfo bufferInfo) 
+{
     std::vector<uint8_t> buffer;
     OH_AVFormat *temFormat = OH_VideoDecoder_GetOutputDescription(bufferInfo.codec);
     OH_AVFormat_GetIntValue(temFormat, OH_MD_KEY_VIDEO_STRIDE, &stride_);
     OH_AVFormat_GetIntValue(temFormat, OH_MD_KEY_VIDEO_SLICE_HEIGHT, &sliceHeight_);
-    LOGD("GetBufferData %{public}d %{public}d", stride_, sliceHeight_);
     OH_AVFormat_Destroy(temFormat);
     if (!bufferInfo.bufferOrigin)
         return;
     uint8_t *dataPtr = reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(bufferInfo.bufferOrigin));
     buffer.assign(dataPtr, dataPtr + bufferInfo.attr.size);
     std::unique_lock<std::mutex> pauseLock(pauseMutex_);
-    pauseCond_.wait(pauseLock, [this]() { return !isPause_;});
+    pauseCond_.wait(pauseLock, [this]() { return !isPause_; });
     pauseLock.unlock();
     std::unique_lock<std::mutex> lock(renderMutex_);
     renderQueue_.push(buffer);
     renderCond_.notify_all();
 }
 
-void Player::DecOutputThread() {
-    LOGD("sampleInfo_.frameInterval:  %{public}ld", sampleInfo_.frameInterval);
+void Player::DecOutputThread() 
+{
     while (!isStop_ && isStarted_) {
         thread_local auto lastPushTime = std::chrono::system_clock::now();
         std::unique_lock<std::mutex> lock(signal_->outputMutex);
         bool condRet = signal_->outputCond.wait_for(
             lock, 300ms, [this]() { return !isStarted_ || !signal_->outputBufferInfoQueue.empty(); });
         if (!isStarted_) {
-            LOGE("Decoder output thread done out");
             break;
         }
         if (signal_->outputBufferInfoQueue.empty()) {
-            LOGE("DecOutputThread Buffer queue is empty, continue, cond ret: %{public}d", condRet);
             continue;
         }
 
         CodecBufferInfo bufferInfo = signal_->outputBufferInfoQueue.front();
         signal_->outputBufferInfoQueue.pop();
         if (bufferInfo.attr.flags & AVCODEC_BUFFER_FLAGS_EOS) {
-            LOGE("Catch EOS, out thread out");
             isVideoEndOfFile_ = true;
             break;
         }
@@ -441,27 +343,24 @@ void Player::DecOutputThread() {
 
         int32_t ret = videoDecoder_->FreeOutputData(bufferInfo.bufferIndex, false);
         if (ret != AV_ERR_OK) {
-            LOGE("Decoder output thread out free");
             break;
         }
 
         std::this_thread::sleep_until(lastPushTime + std::chrono::microseconds(sampleInfo_.frameInterval));
         lastPushTime = std::chrono::system_clock::now();
     }
-    LOGW("DecOutputThread exit, frame count: %{public}u", signal_->outputFrameCount);
 }
 
-void Player::DecAudioInputThread() {
+void Player::DecAudioInputThread() 
+{
     while (!isStop_ && isStarted_) {
         std::unique_lock<std::mutex> lock(audioSignal_->audioInputMutex);
         bool condRet = audioSignal_->audioInputCond.wait_for(
             lock, 300ms, [this]() { return !isStarted_ || !audioSignal_->audioInputBufferInfoQueue.empty(); });
         if (!isStarted_) {
-            LOGE("audio Work done, thread out");
             break;
         }
         if (audioSignal_->audioInputBufferInfoQueue.empty()) {
-            LOGE("audio Buffer queue is empty, continue, cond ret: %{public}d", condRet);
             continue;
         }
 
@@ -473,33 +372,31 @@ void Player::DecAudioInputThread() {
 
         int32_t ret = audioDecoder_->PushInputData(bufferInfo);
         if (ret != AV_ERR_OK) {
-            LOGE("audio Push data failed, thread out");
             break;
         }
 
         if (bufferInfo.attr.flags & AVCODEC_BUFFER_FLAGS_EOS) {
-            LOGE("audio Catch EOS, in thread out");
             break;
         }
     }
-    LOGI("DecAudioInputThread exit");
 }
 
-void Player::GetPCMData(AudioCodecBufferInfo bufferInfo) {
+void Player::GetPCMData(AudioCodecBufferInfo bufferInfo) 
+{
     uint8_t *source = reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(bufferInfo.bufferOrigin));
     for (int i = 0; i < bufferInfo.attr.size; i++) {
         audioSignal_->renderQueue.push(*(source + i));
     }
 }
 
-void Player::DecAudioOutputThread() {
+void Player::DecAudioOutputThread() 
+{
     if (audioRenderer_) {
         OH_AudioRenderer_SetSpeed(audioRenderer_, speed_);
         OH_AudioRenderer_Start(audioRenderer_);
     }
     while (!isStop_ && isStarted_) {
         if (audioSignal_->isInterrupt) {
-            LOGW("audio render interrupt. play stop");
             isStop_ = true;
             break;
         }
@@ -522,7 +419,6 @@ void Player::DecAudioOutputThread() {
         AudioCodecBufferInfo bufferInfo = audioSignal_->audioOutputBufferInfoQueue.front();
         audioSignal_->audioOutputBufferInfoQueue.pop();
         if (bufferInfo.attr.flags & AVCODEC_BUFFER_FLAGS_EOS) {
-            LOGE("Catch EOS, audio out thread out");
             break;
         }
         GetPCMData(bufferInfo);
@@ -539,8 +435,8 @@ void Player::DecAudioOutputThread() {
     OH_AudioRenderer_Stop(audioRenderer_);
 }
 
-void Player::InitAudioPlayer(AudioInitData audioInitData) {
-    LOGD("AudioPlayer enter init");
+void Player::InitAudioPlayer(AudioInitData audioInitData) 
+{
     OH_AudioStreamBuilder_Create(&builder_, audioInitData.type);
     OH_AudioStreamBuilder_SetSamplingRate(builder_, audioInitData.samplingRate);
     OH_AudioStreamBuilder_SetChannelCount(builder_, audioInitData.channelCount);
@@ -558,10 +454,9 @@ void Player::InitAudioPlayer(AudioInitData audioInitData) {
     OH_AudioStreamBuilder_GenerateRenderer(builder_, &audioRenderer_);
 }
 
-void Player::PauseAndResume()
+void Player::PauseAndResume() 
 {
     if (!isStarted_) {
-        LOGD("PauseAndResume player is not start");
         return;
     }
     std::lock_guard<std::mutex> lock(pauseMutex_);
@@ -571,7 +466,6 @@ void Player::PauseAndResume()
 
 void Player::Stop() {
     if (!isStarted_) {
-        LOGD("Stop player is not start");
         return;
     }
     isStop_ = true;
@@ -579,29 +473,27 @@ void Player::Stop() {
     std::lock_guard<std::mutex> lock(pauseMutex_);
     if (isPause_) {
         isPause_ = false;
-        LOGD("Player------6");
         pauseCond_.notify_all();
-        LOGD("Player------7");
     }
 }
 
-void Player::CallBackJS(VapState state, CallbackType type, int32_t err) {
+void Player::CallBackJS(VapState state, CallbackType type, int32_t err) 
+{
     std::unique_lock<std::mutex> lock(callbackRefsMutex_);
     if ((callbackRefs_.find(type) != callbackRefs_.end()) && callbackAll_ && isContainerDestroy_ == false) {
-        LOGE("Player------9");
         CallbackContext *context = new CallbackContext;
         context->callbackRef = callbackRefs_[type];
         context->vapState = state;
         context->err = err;
         jsAnimConfig_.currentFrame = renderFrameCurIdx_;
         context->jsAnimConfig = jsAnimConfig_;
-        LOGE("Player------10");
         callbackAll_(context);
     }
 }
 
-void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*callbackFn)(void *context)) {
-    if(!callbackAll_ && callbackFn){
+void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*callbackFn)(void *context)) 
+{
+    if (!callbackAll_ && callbackFn) {
         callbackAll_ = callbackFn;
     }
     std::unique_lock<std::mutex> lock(callbackRefsMutex_);
@@ -610,20 +502,8 @@ void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*cal
         callbackRefs_.at(type);
         callbackRefs_.erase(type);
     }
-    if(type != CallbackType::UNKNOWN){
+    if (type != CallbackType::UNKNOWN) {
         callbackRefs_.insert(std::make_pair(type, callbackw));
-    }
-}
-
-void Player::ClearCallback(CallbackType type)
-{
-    std::unique_lock<std::mutex> lock(callbackRefsMutex_);
-    auto it = callbackRefs_.find(type);
-    if (it != callbackRefs_.end()) {
-        callbackRefs_.erase(it);
-        LOGD("ClearCallback key: %{public}d", type);
-    } else {
-        LOGE("ClearCallback key: %{public}d not find", type);
     }
 }
 

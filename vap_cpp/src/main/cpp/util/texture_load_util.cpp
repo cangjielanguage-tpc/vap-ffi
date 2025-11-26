@@ -9,19 +9,16 @@
 void TextureLoadUtil::loadTexture(BitMap bitmap, GLuint *textureId)
 {
     if (!textureId) {
-        LOGE("textureId nullptr");
         return;
     }
     GLuint textures[1];
     glGenTextures(1, textures);
     if (textures[0] == 0) {
-        LOGE("glGenTextures error");
         return;
     }
 
     if (bitmap.pixelsData.empty()) {
         glDeleteTextures(1, textures);
-        LOGE("pixelsData empty");
         return;
     }
 

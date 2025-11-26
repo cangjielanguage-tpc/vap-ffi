@@ -13,7 +13,6 @@ constexpr int LIMIT_LOGD_FREQUENCY = 50;
 int32_t VAPCallback::OnRenderWriteData(OH_AudioRenderer *renderer, void *userData, void *buffer, int32_t length)
 {
     if (userData == nullptr || buffer == nullptr) {
-        LOGD("OnRenderWriteData con not get userData");
         return 1;
     }
     (void)renderer;
@@ -60,12 +59,10 @@ int32_t VAPCallback::OnRenderInterruptEvent(OH_AudioRenderer *renderer,
     (void)type;
     (void)hint;
     if (userData == nullptr) {
-        LOGD("OnRenderWriteData con not get userData");
         return 1;
     }
     ADecSignal *codecUserData = static_cast<ADecSignal *>(userData);
     codecUserData->isInterrupt = true;
-    LOGD("audio RenderInterruptEvent type: %{public}d hint: %{public}d", type, hint);
     return 0;
 }
 // 自定义异常回调函数
@@ -74,7 +71,6 @@ int32_t VAPCallback::OnRenderError(OH_AudioRenderer *renderer, void *userData, O
     (void)renderer;
     (void)userData;
     (void)error;
-    LOGE("OnRenderError");
     // 根据error表示的音频异常信息，做出相应的处理
     return 0;
 }
@@ -84,7 +80,6 @@ void VAPCallback::OnCodecError(OH_AVCodec *codec, int32_t errorCode, void *userD
     (void)codec;
     (void)errorCode;
     (void)userData;
-    LOGD("On codec error, error code: %{public}d", errorCode);
 }
 
 void VAPCallback::OnCodecFormatChange(OH_AVCodec *codec, OH_AVFormat *format, void *userData)

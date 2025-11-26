@@ -47,13 +47,7 @@ Src::Src(json jsonSrc)
 }
 
 void Src::PrintInfo()
-{
-    LOGD("srcId: %{public}s srcType: %{public}d, loadType:%{public}d, srcTag:%{public}s,"
-        "color:%{public}x, style:%{public}d, w:%{public}d, h:%{public}d, fitType: %{public}d, "
-        "drawWidth: %{public}d,drawHeight: %{public}d, txt:%{public}s, srcTextureId: %{public}d",
-        srcId.c_str(), srcType, loadType, srcTag.c_str(), color, style, w, h, fitType, drawWidth, drawHeight, txt.c_str(),
-        srcTextureId);
-}
+{}
 
 SrcMap::SrcMap(json jsonObj)
 {

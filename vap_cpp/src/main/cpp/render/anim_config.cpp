@@ -46,7 +46,6 @@ int AnimConfig::GetJson(std::string &jsonStr, std::string &uri)
         ParseBoxHead(buffer, boxHead);
 
         if (boxHead.type.compare("vapc") == ZERO) { // memcmp(boxHead.type.data(), "vapc", 4) == 0
-            LOGD("json length: %{public}d", boxHead.length);
             std::vector<char> cont(boxHead.length);
             file.read(cont.data(), boxHead.length);
             jsonStr.assign(cont.begin(), cont.end());
@@ -67,22 +66,18 @@ int AnimConfig::GetJson(std::string &jsonStr, std::string &uri)
 bool AnimConfig::ParseJson(std::string uri, bool isNeedParseFrame)
 {
     if (isInit) {
-        LOGD("Json data has been initialized");
         return true;
     }
     std::string strJson;
     json jsonObj;
     if (GetJson(strJson, uri) == NEGATIVE_ONE) {
-        LOGE("AnimConfig::String2Json failed");
         return false;
     }
     if (strJson.empty()) {
-        LOGE("AnimConfig not get json");
         return false;
     }
     jsonObj = json::parse(strJson);
     if (jsonObj.find("info") == jsonObj.end()) {
-        LOGE("jsonObj: not find info");
         return false;
     }
     const auto &info = jsonObj.at("info");

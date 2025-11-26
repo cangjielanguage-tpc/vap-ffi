@@ -57,8 +57,6 @@ void MixRender::GenSrcTexture(Src src, BitMap &bitmap, const MixInputData mixDat
         if (mixData.isSet & SET_FONT_WEIGHT) {
             txtOpt.fontWeight = mixData.fontWeight;
         }
-        LOGI("GenSrcTexture tag %{public}s ta ta: %{public}d-%{public}d", src.srcTag.c_str(),
-            txtOpt.textAlign, mixData.textAlign);
 
         reqPtr->FetchText(bitmap.pixelsData, txtOpt);
     } else if (src.srcType == SrcType::IMG) {
@@ -68,7 +66,6 @@ void MixRender::GenSrcTexture(Src src, BitMap &bitmap, const MixInputData mixDat
         imgOpt.fixType = src.fitType;
         reqPtr->FetchImg(bitmap.pixelsData, imgOpt, mixData);
         if (bitmap.pixelsData.empty()) {
-            LOGI("MixRender FetchImg error");
             bitmap.pixelsData.resize(src.w * src.h * FOUR);
             fill(bitmap.pixelsData.begin(), bitmap.pixelsData.end(), 0xaa);
         }
@@ -79,7 +76,6 @@ void MixRender::Init()
 {
     glDisable(GL_DEPTH_TEST);
     if (!m_animConfig || !m_animConfig->srcMapPtr) {
-        LOGE("MixRender nullptr no need mix");
         return;
     }
     haveSrc = true;
@@ -93,14 +89,11 @@ void MixRender::Init()
         BitMap bitmap;
         
         if (m_mixData.find(it->second.srcTag) == m_mixData.end()) {
-            LOGI("MixRender Data tag: %{public}s not find.", it->second.srcTag.c_str());
             isEnough = false;
             bitmap.pixelsData.resize(src.w * src.h * FOUR);
             fill(bitmap.pixelsData.begin(), bitmap.pixelsData.end(), 0xaa);
         } else {
             MixInputData mixData = m_mixData.at(it->second.srcTag);
-            LOGI("Init tag %{public}s fw ta: %{public}d-%{public}d", it->second.srcTag.c_str(),
-                mixData.fontWeight, mixData.textAlign);
             if (src.srcType == SrcType::TXT && (mixData.isSet & SET_COLOR)) {
                 ColorARGB color = mixData.color;
                 it->second.color =
@@ -120,7 +113,6 @@ void MixRender::Init()
         
         m_textureIds[idx] = textureId;
         idx++;
-        LOGD("MixRender srcTextureId :%{public}d", textureId);
     }
     
     m_shader = std::make_unique<MixShader>();
@@ -139,11 +131,9 @@ MixRender::~MixRender()
 void MixRender::RenderFrame(MixConfigSize config, Frame frame, Src src)
 {
     if (!haveSrc) {
-        LOGE("MixRender RenderFrame not have src");
         return;
     }
     if (videoTextureId <= ZERO) {
-        LOGE("MixRender RenderFrame externalTexture error");
         return;
     }
     m_shader->UseProgram();

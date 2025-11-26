@@ -33,11 +33,9 @@ class NewOn {
         var rootPath = globalAbilityContext.getOrThrow().resourceDir
         var filePath = "${rootPath}/" + videoName
         this.vapController.setUrl(filePath)
-        println("NewOn")
     }
 
     func viewInit() {
-        println("NewOn")
     }
 
     public func cbFn(): Unit {
@@ -46,7 +44,6 @@ class NewOn {
 
     private func play(): Unit {
         try {
-            this.on()
             this.vapController.setFitType(FitType.CENTER_CROP)
             this.vapController.setVideoMode(VideoMode.VIDEO_MODE_SPLIT_HORIZONTAL)
             var rootPath = globalAbilityContext.getOrThrow().resourceDir
@@ -71,21 +68,6 @@ class NewOn {
             this.vapController.pause()
         } catch (e: Exception) {
             Hilog.error(0, "=======GeneralAnimation  pause =========", "${e.message}")
-        }
-    }
-
-    private func on(): Unit {
-        try {
-            this.vapController.on("stateChange", callbackOn)
-        } catch (e: Exception) {
-            Hilog.error(0, "=======GeneralAnimation  pause =========", "${e.message}")
-        }
-    }
-
-    func callbackOn(state: Int64, ret: Int64): Unit {
-        var retOpt: Option<Any> = ret
-        if(state == this.vapState.getVapState(VapState.DESTROY)){
-            this.showVideo = false;
         }
     }
 

@@ -39,10 +39,6 @@ import ohos.component.XComponent
 import ohos.component.XComponentType
 import std.collection.Map
 
-public class GlobalLoops {
-    public static var stateComponent: HashMap<String, Bool> = HashMap<String, Bool>();
-}
-
 @Entry
 @Component
 public class GeneralAnimation {
@@ -99,7 +95,6 @@ public class GeneralAnimation {
                             {
                                 index: Int32, event =>
                                 this.fitType = this.fitType.getFitType(index)
-                                Hilog.info(0, "=======  GeneralAnimation Select =========", "[${index}]")
                             }
                         )
                     Button("Play")
@@ -142,7 +137,6 @@ public class GeneralAnimation {
             this.vapController.setFitType(this.fitType)
             this.vapController.setVideoMode(VideoMode.VIDEO_MODE_SPLIT_HORIZONTAL)
 
-            this.vapController.setDownloadAttribute(50000, download)
             this.vapController.setLoop(1)
             this.buttonEnabled = false
             this.vapController.play(filePath, opts, cbFn)
@@ -177,11 +171,5 @@ public class GeneralAnimation {
 
     func cbFn(): Unit {
         this.buttonEnabled = true
-        Hilog.info(0, "=======GeneralAnimation  cbFn =========", "-----GeneralAnimation--cbFn-")
-
-    }
-
-    func download(data: DownLoadData): Unit {
-        Hilog.info(0, "=======download  DownLoadData =========", "-----download  DownLoadData-")
     }
 }
