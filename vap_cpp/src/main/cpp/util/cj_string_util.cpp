@@ -12,7 +12,7 @@
 #include <string.h>
 
 namespace pag {
-CJBytesArray stringToCJBytesArray(const std::string &str) 
+CJBytesArray stringToCJBytesArray(const std::string &str)
 {
     CJBytesArray result;
     if (str.empty()) {
@@ -28,7 +28,7 @@ CJBytesArray stringToCJBytesArray(const std::string &str)
     return result;
 }
 
-void safe_copy(void *dest, uint32_t dest_size, const void *src, uint32_t src_size) 
+void safe_copy(void *dest, uint32_t dest_size, const void *src, uint32_t src_size)
 {
     if (!dest || !src) {
         throw std::runtime_error("safe_copy null pointer passed to safe_copy.");

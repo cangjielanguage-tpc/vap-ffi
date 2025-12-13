@@ -17,7 +17,7 @@
 std::mutex g_mtx;
 std::unordered_map<int64_t, std::shared_ptr<PluginRender>> PluginRender::m_instance;
 extern "C" {
-PluginRender::PluginRender(int64_t &id) 
+PluginRender::PluginRender(int64_t &id)
 {
     this->eglCore_ = new EGLCore();
     hasDraw_ = 0;
@@ -25,7 +25,7 @@ PluginRender::PluginRender(int64_t &id)
     this->m_id = id;
 }
 
-PluginRender::~PluginRender() 
+PluginRender::~PluginRender()
 {
     if (player_) {
         LOGI("PluginRender player_");
@@ -37,7 +37,7 @@ void PluginRender::ChangeColor() { eglCore_->ChangeColor(hasChangeColor_); }
 
 void PluginRender::DrawPattern() { eglCore_->Draw(hasDraw_); }
 
-void PluginRender::UpdateNativeWindowSize(int width, int height) 
+void PluginRender::UpdateNativeWindowSize(int width, int height)
 {
     eglCore_->UpdateSize(width, height);
     if (!hasChangeColor_ && !hasDraw_) {
@@ -49,7 +49,7 @@ int32_t PluginRender::HasDraw() { return hasDraw_; }
 
 int32_t PluginRender::HasChangedColor() { return hasChangeColor_; }
 
-static void ParseMixParamTag(std::string tag, std::string &tag1) 
+static void ParseMixParamTag(std::string tag, std::string &tag1)
 {
     if (!tag.empty()) {
         tag1 = tag;
@@ -58,7 +58,7 @@ static void ParseMixParamTag(std::string tag, std::string &tag1)
     }
 }
 
-static void ParseMixParamTxt(MixInputData &mixInputData, std::string txt) 
+static void ParseMixParamTxt(MixInputData &mixInputData, std::string txt)
 {
     if (!txt.empty()) {
         mixInputData.txt = txt;
@@ -73,7 +73,7 @@ static void ParseMixParamImg(MixInputData &mixInputData, std::string imgUri)
 }
 
 static void ParseMixParamColor(MixInputData &mixInputData, std::uint64_t valueA, std::uint64_t valueR,
-                               std::uint64_t valueG, std::uint64_t valueB) 
+                               std::uint64_t valueG, std::uint64_t valueB)
 {
     if (valueA && valueR && valueG && valueB) {
         uint32_t valueA32 = static_cast<uint32_t>(valueA);
@@ -85,7 +85,7 @@ static void ParseMixParamColor(MixInputData &mixInputData, std::uint64_t valueA,
     }
 }
 
-static std::optional<OH_Drawing_FontWeight> intToFontWeight(int value) 
+static std::optional<OH_Drawing_FontWeight> intToFontWeight(int value)
 {
     switch (value) {
         case static_cast<int>(OH_Drawing_FontWeight::FONT_WEIGHT_100):
@@ -111,7 +111,7 @@ static std::optional<OH_Drawing_FontWeight> intToFontWeight(int value)
     }
 }
 
-static void ParseMixParamFontWeight(MixInputData &mixInputData, int value) 
+static void ParseMixParamFontWeight(MixInputData &mixInputData, int value)
 {
     auto fontWeight = intToFontWeight(value);
     if (fontWeight) {
@@ -120,7 +120,7 @@ static void ParseMixParamFontWeight(MixInputData &mixInputData, int value)
     }
 }
 
-static std::optional<OH_Drawing_TextAlign> intToTextAlign(int value) 
+static std::optional<OH_Drawing_TextAlign> intToTextAlign(int value)
 {
     switch (value) {
         case static_cast<int>(OH_Drawing_TextAlign::TEXT_ALIGN_CENTER):
@@ -140,7 +140,7 @@ static std::optional<OH_Drawing_TextAlign> intToTextAlign(int value)
     }
 }
 
-static void ParseMixParamTextAlign(MixInputData &mixInputData, int value) 
+static void ParseMixParamTextAlign(MixInputData &mixInputData, int value)
 {
     auto textAlign = intToTextAlign(value);
     if (textAlign) {
@@ -149,7 +149,7 @@ static void ParseMixParamTextAlign(MixInputData &mixInputData, int value)
     }
 }
 
-void ParseMixParam(std::map<std::string, MixInputData> &mixData, CangjieMixData *mixDataCj, size_t length) 
+void ParseMixParam(std::map<std::string, MixInputData> &mixData, CangjieMixData *mixDataCj, size_t length)
 {
     for (uint32_t i = 0; i < length; i++) {
         // 获取当前结构体元素的引用
@@ -169,8 +169,7 @@ void ParseMixParam(std::map<std::string, MixInputData> &mixData, CangjieMixData 
     }
 }
 
-struct CallbackContext4cj 
-{
+struct CallbackContext4cj {
     void (*callbackRef)() = nullptr;
     int what = 0;
     int arg1 = 0;
@@ -179,9 +178,7 @@ struct CallbackContext4cj
     int ijk_id = 0;
 };
 
-
-CJBytesArray RemoveSurroundingChars(const std::string &str, char startChar, char endChar) 
-{
+CJBytesArray RemoveSurroundingChars(const std::string &str, char startChar, char endChar) {
     size_t start = str.find_first_not_of(startChar);
     if (start == std::string::npos) {
         return {0, nullptr}; // 如果字符串中没有找到非startChar的字符，返回空字符串
@@ -194,8 +191,7 @@ CJBytesArray RemoveSurroundingChars(const std::string &str, char startChar, char
     return pag::stringToCJBytesArray((char *)str.c_str());
 }
 
-static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src) 
-{
+static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src) {
     std::vector<SrcInfoo> srcInfos;
     size_t i = 0;
     for (auto ele : src) {
@@ -212,7 +208,7 @@ static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src)
     return srcInfos;
 }
 
-void freeCJBytesArray(CJBytesArray *cjbytesArray, int64_t i) 
+void freeCJBytesArray(CJBytesArray *cjbytesArray, int64_t i)
 {
     if (cjbytesArray[i].buf == nullptr) {
         return;
@@ -223,7 +219,7 @@ void freeCJBytesArray(CJBytesArray *cjbytesArray, int64_t i)
     }
 }
 
-void Callback(void *asyncContext) 
+void Callback(void *asyncContext)
 {
     if (asyncContext == nullptr) {
         return;
@@ -256,7 +252,7 @@ void Callback(void *asyncContext)
         });
 }
 
-void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t length, Callback1 backw, int64_t id) 
+void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t length, Callback1 backw, int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
 
@@ -281,7 +277,7 @@ void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t 
     }
 }
 
-void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id) 
+void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (render) {
@@ -302,7 +298,7 @@ void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id)
     }
 }
 
-void CangjiePluginRenderPause(int64_t id) 
+void CangjiePluginRenderPause(int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (render) {
@@ -310,7 +306,7 @@ void CangjiePluginRenderPause(int64_t id)
     }
 }
 
-void CangjiePluginRenderStop(int64_t id) 
+void CangjiePluginRenderStop(int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (render && render->player_) {
@@ -318,7 +314,7 @@ void CangjiePluginRenderStop(int64_t id)
     }
 }
 
-void CangjiePluginRenderSetLoop(int64_t loops, int64_t id) 
+void CangjiePluginRenderSetLoop(int64_t loops, int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (render) {
@@ -326,7 +322,7 @@ void CangjiePluginRenderSetLoop(int64_t loops, int64_t id)
     }
 }
 
-void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id) 
+void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
@@ -343,7 +339,7 @@ void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id)
     render->player_->SetFitType(fitType);
 }
 
-SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id) 
+SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
@@ -381,7 +377,7 @@ SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id)
     return SrcInfoArray{size, srcIdInt64, srcTypeInt64, CJInt64Array{size, arr}, animConfig.width, animConfig.height};
 }
 
-void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id) 
+void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
@@ -402,7 +398,7 @@ void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id)
 
 CJBytesArray GetsElementAnArray(CJBytesArray *cJBytesArray, int64_t i) { return cJBytesArray[i]; }
 
-void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id) 
+void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id)
 {
     PluginRender *render = PluginManager::GetPluginRender(id);
     if (!render) {
@@ -419,8 +415,7 @@ CJ_EXPORT void FFIDrawPattern(int64_t surfaceId) { PluginManager::DrawPattern(su
 
 CJ_EXPORT void FFISetSurfaceId(int64_t surfaceId) { PluginManager::SetSurfaceId(surfaceId); }
 
-CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height) 
-{
+CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height) {
     PluginManager::ChangeSurface(surfaceId, width, height);
     PluginRender *render = PluginManager::GetPluginRender(surfaceId);
     if (nullptr != render) {
@@ -441,8 +436,7 @@ CJ_EXPORT void FFIDestroySurface(int64_t surfaceId) { PluginManager::DestroySurf
 
 CJ_EXPORT bool FFIGetXComponentHasDraw(int64_t surfaceId) { return PluginManager::GetXComponentHasDraw(surfaceId); }
 
-CJ_EXPORT bool FFIXComponentHasChangeColor(int64_t surfaceId) 
-{
+CJ_EXPORT bool FFIXComponentHasChangeColor(int64_t surfaceId) {
     return PluginManager::GetXComponentHasChangeColor(surfaceId);
 }
 EXTERN_C_END

@@ -39,13 +39,15 @@ public:
     void Release();
 
     void SetFitType(VideoFitType fitType) { m_fitType = fitType; }
-    void SetVideoMode(VideoMode videoMode) {
+    void SetVideoMode(VideoMode videoMode)
+    {
         m_defaultVideoMode = videoMode;
         if (m_animConfig) {
             m_animConfig->isDefaultConfig = true;
         }
     }
-    void SetVideoSize(int32_t width, int32_t height, std::string mime) {
+    void SetVideoSize(int32_t width, int32_t height, std::string mime)
+    {
         m_videoWidth = width;
         m_videoHeight = height;
         m_isH265 = mime == MIME_VIDEO_HEVC;
@@ -56,7 +58,8 @@ public:
                      int videoHeight);
     bool FinishLoad();
 
-    void UpdateSize(int width, int height) {
+    void UpdateSize(int width, int height)
+    {
         LOGI("enter UpdateSize %{public}d * %{public}d ", width, height);
         m_width = width;
         m_height = height;
@@ -94,7 +97,7 @@ private:
     int m_width;
     int m_height;
     GLfloat m_widthPercent;
-    unsigned char *buf[3] = {0};
+//    unsigned char *buf[3] = {0};
     std::unique_ptr<class YuvRender> m_render = nullptr;
     std::unique_ptr<class MixRender> m_mixRender = nullptr;
     std::unique_ptr<MaskRender> m_maskRender = nullptr;

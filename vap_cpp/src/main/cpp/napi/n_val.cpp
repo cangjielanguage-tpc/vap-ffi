@@ -93,7 +93,7 @@ tuple<bool, unique_ptr<char[]>, size_t> NVal::ToUTF8String() const
     if (valueType == napi_null) {
         unique_ptr<char[]> str = make_unique<char[]>(1);
         str[0] = '\0';
-        return {true, move(str), 0};
+        return {true, std::move(str), 0};
     } else if (valueType != napi_string) {
         return {false, nullptr, 0};
     }
@@ -106,7 +106,7 @@ tuple<bool, unique_ptr<char[]>, size_t> NVal::ToUTF8String() const
     size_t bufLen = strLen + 1;
     unique_ptr<char[]> str = make_unique<char[]>(bufLen);
     status = napi_get_value_string_utf8(env_, val_, str.get(), bufLen, &strLen);
-    return make_tuple(status == napi_ok, move(str), strLen);
+    return make_tuple(status == napi_ok, std::move(str), strLen);
 }
 
 tuple<bool, unique_ptr<char[]>, size_t> NVal::ToUTF16String() const

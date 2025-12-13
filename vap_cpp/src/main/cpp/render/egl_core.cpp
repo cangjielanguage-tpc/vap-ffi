@@ -176,7 +176,8 @@ const EGLint ATTRIB_LIST[] = {
  */
 const EGLint CONTEXT_ATTRIBS[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
 
-bool EGLCore::EglContextInit(void *window) {
+bool EGLCore::EglContextInit(void *window)
+{
     OH_LOG_Print(LOG_APP, LOG_INFO, LOG_PRINT_DOMAIN, "EGLCore", "EglContextInit execute");
     m_eglWindow = static_cast<EGLNativeWindowType>(window);
 
@@ -207,7 +208,8 @@ bool EGLCore::EglContextInit(void *window) {
 }
 
 bool EGLCore::EglContextInit1(EGLNativeWindowType window, int width, int height, std::string uri,
-                              std::map<std::string, MixInputData> &iptData) {
+                              std::map<std::string, MixInputData> &iptData)
+{
     if ((nullptr == window) || (ZERO >= width) || (ZERO >= height)) {
         return false;
     }
@@ -256,7 +258,8 @@ bool EGLCore::EglContextInit1(EGLNativeWindowType window, int width, int height,
     return ret;
 }
 
-EGLConfig EGLCore::ChooseConfig() {
+EGLConfig EGLCore::ChooseConfig()
+{
     std::vector<int> attribList;
     GetAttributes(attribList);
     EGLConfig configs = nullptr;
@@ -268,14 +271,16 @@ EGLConfig EGLCore::ChooseConfig() {
     return configs;
 }
 
-void EGLCore::GetAttributes(std::vector<int> &array) {
+void EGLCore::GetAttributes(std::vector<int> &array)
+{
     array = {EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
              // 指定渲染api类别
              EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 8, EGL_DEPTH_SIZE, 0,
              EGL_STENCIL_SIZE, 0, EGL_NONE};
 }
 
-bool EGLCore::CreateEnvironment() {
+bool EGLCore::CreateEnvironment()
+{
     // Create surface.
     if (m_eglWindow == nullptr) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "eglWindow_ is null");
@@ -301,13 +306,15 @@ bool EGLCore::CreateEnvironment() {
     return true;
 }
 
-EGLContext EGLCore::CreateContext(EGLDisplay eglDisplay, EGLConfig eglConfig) {
+EGLContext EGLCore::CreateContext(EGLDisplay eglDisplay, EGLConfig eglConfig)
+{
     std::vector<EGLint> attrs = {EGL_CONTEXT_CLIENT_VERSION, TWO, EGL_NONE};
     EGLContext eglContext = eglCreateContext(eglDisplay, eglConfig, EGL_NO_CONTEXT, attrs.data());
     return eglContext;
 }
 
-void EGLCore::Background() {
+void EGLCore::Background()
+{
     GLint position = PrepareDraw();
     if (position == POSITION_ERROR) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "Background get position failed");
@@ -326,7 +333,8 @@ void EGLCore::Background() {
     }
 }
 
-void EGLCore::Draw(int &hasDraw) {
+void EGLCore::Draw(int &hasDraw)
+{
     m_flag = false;
     GLint position = PrepareDraw();
     if (position == POSITION_ERROR) {
@@ -386,7 +394,8 @@ void EGLCore::Draw(int &hasDraw) {
     m_flag = true;
 }
 
-void EGLCore::ChangeColor(int &hasChangeColor) {
+void EGLCore::ChangeColor(int &hasChangeColor)
+{
     if (!m_flag) {
         return;
     }
@@ -446,7 +455,8 @@ void EGLCore::ChangeColor(int &hasChangeColor) {
     hasChangeColor = 1;
 }
 
-GLint EGLCore::PrepareDraw() {
+GLint EGLCore::PrepareDraw()
+{
     // The gl function has no return value.
     glViewport(DEFAULT_X_POSITION, DEFAULT_Y_POSITION, m_width, m_height);
     glClearColor(GL_RED_DEFAULT, GL_GREEN_DEFAULT, GL_BLUE_DEFAULT, GL_ALPHA_DEFAULT);
@@ -455,7 +465,8 @@ GLint EGLCore::PrepareDraw() {
     return glGetAttribLocation(m_program, POSITION_NAME);
 }
 
-bool EGLCore::ExecuteDraw(GLint position, const GLfloat *color, const GLfloat shapeVertices[], unsigned long vertSize) {
+bool EGLCore::ExecuteDraw(GLint position, const GLfloat *color, const GLfloat shapeVertices[], unsigned long vertSize)
+{
     if ((position > 0) || (color == nullptr) || (vertSize / sizeof(shapeVertices[0])) != SHAPE_VERTICES_SIZE) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "ExecuteDraw: param error");
         return false;
@@ -471,7 +482,8 @@ bool EGLCore::ExecuteDraw(GLint position, const GLfloat *color, const GLfloat sh
 }
 
 bool EGLCore::ExecuteDrawStar(GLint position, const GLfloat *color, const GLfloat shapeVertices[],
-                              unsigned long vertSize) {
+                              unsigned long vertSize)
+{
     if ((position > 0) || (color == nullptr) || (vertSize / sizeof(shapeVertices[0])) != SHAPE_VERTICES_SIZE) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "ExecuteDraw: param error");
         return false;
@@ -489,7 +501,8 @@ bool EGLCore::ExecuteDrawStar(GLint position, const GLfloat *color, const GLfloa
 }
 
 bool EGLCore::ExecuteDrawNewStar(GLint position, const GLfloat *color, const GLfloat shapeVertices[],
-                                 unsigned long vertSize) {
+                                 unsigned long vertSize)
+{
     if ((position > 0) || (color == nullptr) || (vertSize / sizeof(shapeVertices[0])) != SHAPE_VERTICES_SIZE) {
         OH_LOG_Print(LOG_APP, LOG_ERROR, LOG_PRINT_DOMAIN, "EGLCore", "ExecuteDraw: param error");
         return false;
@@ -503,21 +516,24 @@ bool EGLCore::ExecuteDrawNewStar(GLint position, const GLfloat *color, const GLf
     return true;
 }
 
-void EGLCore::Rotate2d(GLfloat centerX, GLfloat centerY, GLfloat *rotateX, GLfloat *rotateY, GLfloat theta) {
+void EGLCore::Rotate2d(GLfloat centerX, GLfloat centerY, GLfloat *rotateX, GLfloat *rotateY, GLfloat theta)
+{
     GLfloat tempX = cos(theta) * (*rotateX - centerX) - sin(theta) * (*rotateY - centerY);
     GLfloat tempY = sin(theta) * (*rotateX - centerX) + cos(theta) * (*rotateY - centerY);
     *rotateX = tempX + centerX;
     *rotateY = tempY + centerY;
 }
 
-bool EGLCore::FinishDraw() {
+bool EGLCore::FinishDraw()
+{
     // The gl function has no return value.
     glFlush();
     glFinish();
     return eglSwapBuffers(m_eglDisplay, m_eglSurface);
 }
 
-void EGLCore::InitFitConfig() {
+void EGLCore::InitFitConfig()
+{
     if (m_fitType == VideoFitType::FIT_CENTER) {
         FitCenter();
     } else if (m_fitType == VideoFitType::CENTER_CROP) {
@@ -529,7 +545,8 @@ void EGLCore::InitFitConfig() {
          m_viewportHeight, m_viewportX, m_viewportY);
 }
 
-void EGLCore::Release() {
+void EGLCore::Release()
+{
     m_render->ClearFrame();
     FinishLoad();
     m_render->ReleaseTexture();
@@ -550,7 +567,8 @@ void EGLCore::Release() {
     }
 }
 
-void EGLCore::Render(RenderData &renderData) {
+void EGLCore::Render(RenderData &renderData)
+{
     if (renderData.data.empty()) {
         LOGE("Yuv data is empty, unable to render YUV");
         return;
@@ -568,7 +586,8 @@ void EGLCore::Render(RenderData &renderData) {
     FinishLoad();
 }
 
-template <typename T> void addVecData(std::vector<unsigned char> &data, T &&value) {
+template <typename T> void addVecData(std::vector<unsigned char> &data, T &&value)
+{
     data.emplace_back(std::forward<T>(value));
 }
 
@@ -637,7 +656,8 @@ bool EGLCore::SeparateYUV(const std::vector<uint8_t> &dataVec, int alignWidth, i
     return true;
 }
 
-bool EGLCore::FinishLoad() {
+bool EGLCore::FinishLoad()
+{
     glFlush();
     glFinish();
     // 窗口显示，交换双缓冲区
@@ -646,11 +666,8 @@ bool EGLCore::FinishLoad() {
     return swap;
 }
 
-static bool calClick(int32_t x, int32_t y, PointRect frame) {
-    return x >= frame.x && x <= (frame.x + frame.w) && y >= frame.y && y <= (frame.y + frame.h);
-}
-
-void EGLCore::MixRenderFrame(int32_t frameCurIdx) {
+void EGLCore::MixRenderFrame(int32_t frameCurIdx)
+{
     if (!m_mixRender || !m_mixRender->haveSrc) {
         LOGE("no src, not have mix render");
         return;
@@ -680,7 +697,8 @@ void EGLCore::MixRenderFrame(int32_t frameCurIdx) {
     }
 }
 
-void EGLCore::FitCenter() {
+void EGLCore::FitCenter()
+{
     int32_t width = 0;
     width = m_animConfig->width;
     int32_t height = 0;
@@ -716,7 +734,8 @@ void EGLCore::FitCenter() {
     m_viewportY = topMargin;
 }
 
-void EGLCore::CenterCrop() {
+void EGLCore::CenterCrop()
+{
     int32_t width = 0;
     width = m_animConfig->width;
     int32_t height = 0;
@@ -752,7 +771,8 @@ void EGLCore::CenterCrop() {
     m_viewportY = -topMargin;
 }
 
-void EGLCore::FitXY() {
+void EGLCore::FitXY()
+{
     m_viewportWidth = m_width;
     m_viewportHeight = m_height;
     m_viewportX = 0;

@@ -13,8 +13,7 @@ std::unordered_map<int64_t, OHNativeWindow *> PluginManager::windowMap_;
 
 static const size_t GET_CONTEXT_PARAM_CNT = 1;
 
-enum ContextType 
-{
+enum ContextType {
     APP_LIFECYCLE,
     PAGE_LIFECYCLE,
 };
@@ -28,7 +27,7 @@ PluginRender *PluginManager::GetPluginRender(int64_t &id)
     return nullptr;
 }
 
-void *PluginManager::SetSurfaceId(int64_t surfaceId) 
+void *PluginManager::SetSurfaceId(int64_t surfaceId)
 {
     OHNativeWindow *nativeWindow;
     PluginRender *pluginRender;
@@ -44,7 +43,7 @@ void *PluginManager::SetSurfaceId(int64_t surfaceId)
     return nullptr;
 }
 
-void *PluginManager::DestroySurface(int64_t surfaceId) 
+void *PluginManager::DestroySurface(int64_t surfaceId)
 {
     auto pluginRender = GetPluginRender(surfaceId);
     if (nullptr != pluginRender) {
@@ -64,7 +63,7 @@ void *PluginManager::DestroySurface(int64_t surfaceId)
     return nullptr;
 }
 
-void *PluginManager::ChangeSurface(int64_t surfaceId, double width, double height) 
+void *PluginManager::ChangeSurface(int64_t surfaceId, double width, double height)
 {
     auto pluginRender = GetPluginRender(surfaceId);
     if (pluginRender == nullptr) {
@@ -74,7 +73,7 @@ void *PluginManager::ChangeSurface(int64_t surfaceId, double width, double heigh
     return nullptr;
 }
 
-void *PluginManager::ChangeColor(int64_t surfaceId) 
+void *PluginManager::ChangeColor(int64_t surfaceId)
 {
     auto pluginRender = GetPluginRender(surfaceId);
     if (pluginRender == nullptr) {
@@ -84,7 +83,7 @@ void *PluginManager::ChangeColor(int64_t surfaceId)
     return nullptr;
 }
 
-void *PluginManager::DrawPattern(int64_t surfaceId) 
+void *PluginManager::DrawPattern(int64_t surfaceId)
 {
     auto pluginRender = GetPluginRender(surfaceId);
     if (pluginRender == nullptr) {
@@ -94,7 +93,7 @@ void *PluginManager::DrawPattern(int64_t surfaceId)
     return nullptr;
 }
 
-bool PluginManager::GetXComponentHasDraw(int64_t surfaceId) 
+bool PluginManager::GetXComponentHasDraw(int64_t surfaceId)
 {
     auto pluginRender = GetPluginRender(surfaceId);
     if (pluginRender == nullptr) {
@@ -103,7 +102,7 @@ bool PluginManager::GetXComponentHasDraw(int64_t surfaceId)
     return pluginRender->HasDraw();
 }
 
-bool PluginManager::GetXComponentHasChangeColor(int64_t surfaceId) 
+bool PluginManager::GetXComponentHasChangeColor(int64_t surfaceId)
 {
     auto pluginRender = GetPluginRender(surfaceId);
     if (pluginRender == nullptr) {

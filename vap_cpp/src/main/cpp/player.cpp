@@ -4,14 +4,16 @@
 
 #include "player.h"
 
-#include "log.h"
-#include "vap_callback.h"
 #include <chrono>
 #include <cstdint>
 #include <memory>
 #include <multimedia/player_framework/native_averrors.h>
+#include <fcntl.h>
 #include <mutex>
+#include <sys/stat.h>
 #include <vector>
+#include "log.h"
+#include "vap_callback.h"
 
 #undef LOG_TAG
 #define LOG_TAG "player"
@@ -20,7 +22,7 @@ namespace {
 using namespace std::chrono_literals;
 }
 
-Player::~Player() 
+Player::~Player()
 {
     callbackAll_ = nullptr;
     Stop();
@@ -30,7 +32,30 @@ Player::~Player()
     }
 }
 
-int32_t Player::InitAudio() 
+static int32_t OpenFile(VAPInfo &info) {
+    const char *file = info.uri.c_str();
+    info.inputFd = -1;
+    info.inputFileSize = 0;
+    info.inputFileOffset = 0;
+    info.inputFd = open(file, O_RDONLY);
+    LOGD("Open file: fd = %{public}d", info.inputFd);
+    if (info.inputFd == -1) {
+        LOGE("cont open file");
+        return AV_ERR_UNKNOWN;
+    }
+
+    struct stat fileStatus {};
+    if (stat(file, &fileStatus) == 0) {
+        info.inputFileSize = static_cast<size_t>(fileStatus.st_size);
+        LOGD("Get stat:%{public}zu", info.inputFileSize);
+        return AV_ERR_OK;
+    } else {
+        LOGE("Get stat file size error");
+        return AV_ERR_UNKNOWN;
+    }
+}
+
+int32_t Player::InitAudio()
 {
     audioDecoder_ = std::make_unique<AudioDecoder>();
     int32_t ret = audioDecoder_->CreateAudioDecoder(sampleInfo_.audioCodecMime);
@@ -49,7 +74,7 @@ int32_t Player::InitAudio()
     return AV_ERR_OK;
 }
 
-void Player::InitControlSignal() 
+void Player::InitControlSignal()
 {
     if (sampleInfo_.frameRate <= 0) {
         sampleInfo_.frameRate = DEFAULT_FRAME_RATE;
@@ -61,7 +86,65 @@ void Player::InitControlSignal()
     isVideoEndOfFile_ = false;
 }
 
-int32_t Player::Start() 
+int32_t Player::Init(VAPInfo &info)
+{
+    LOGI("----------info VAPInfo.");
+    CallBackJS(VapState::READY, CallbackType::STATE_CHANGE);
+    if (isStarted_) {
+        LOGE("Already started.");
+        return AV_ERR_UNKNOWN;
+    }
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (OpenFile(info) != AV_ERR_OK) {
+        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, AV_ERR_UNKNOWN);
+        return AV_ERR_UNKNOWN;
+    }
+
+    sampleInfo_ = info;
+    videoDecoder_ = std::make_unique<VideoDecoder>();
+    if (!videoDecoder_) {
+        LOGE("Create videoDecoder_ failed");
+        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, AV_ERR_UNKNOWN);
+        return AV_ERR_UNKNOWN;
+    }
+
+    demuxer_ = std::make_unique<Demuxer>();
+    int32_t ret = demuxer_->CreateDemuxer(sampleInfo_);
+    if (ret != AV_ERR_OK) {
+        LOGE("Create demuxer failed");
+        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, ret);
+        return AV_ERR_UNKNOWN;
+    }
+
+    ret = videoDecoder_->CreateVideoDecoder(sampleInfo_.codecMime);
+    if (ret != AV_ERR_OK) {
+        LOGE("Create video decoder failed");
+        CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, ret);
+        return AV_ERR_UNKNOWN;
+    }
+
+    if (demuxer_->hasAudio()) {
+        ret = InitAudio();
+        if (ret != AV_ERR_OK) {
+            CallBackJS(VapState::FAILED, CallbackType::STATE_CHANGE, ret);
+            return ret;
+        }
+    }
+    sampleInfo_.frameRate *= speed_;
+    // audioBitrate
+    signal_ = new VDecSignal;
+    ret = videoDecoder_->Config(sampleInfo_, signal_);
+    if (ret != AV_ERR_OK) {
+        LOGE("Decoder config failed");
+        return AV_ERR_UNKNOWN;
+    }
+
+    InitControlSignal();
+    LOGE("Init InitControlSignal");
+    return Start();
+}
+
+int32_t Player::Start()
 {
     if (isStarted_) {
         return AV_ERR_UNKNOWN;
@@ -103,7 +186,7 @@ int32_t Player::Start()
     return AV_ERR_OK;
 }
 
-void Player::StartRelease() 
+void Player::StartRelease()
 {
     std::unique_lock<std::mutex> lock(mutex_);
     if (isReleased_)
@@ -113,7 +196,7 @@ void Player::StartRelease()
     Release();
 }
 
-void Player::ReleaseAudio() 
+void Player::ReleaseAudio()
 {
     if (audioRenderer_) {
         OH_AudioRenderer_Flush(audioRenderer_);
@@ -144,7 +227,7 @@ void Player::ReleaseAudio()
     }
 }
 
-void Player::Release() 
+void Player::Release()
 {
     if (decInputThread_ && decInputThread_->joinable()) {
         decInputThread_->join();
@@ -179,7 +262,7 @@ void Player::Release()
     ResetControlSignal();
 }
 
-void Player::ResetControlSignal() 
+void Player::ResetControlSignal()
 {
     isStop_ = false;
     isStarted_ = false;
@@ -199,7 +282,7 @@ void Player::ResetControlSignal()
     }
 }
 
-void Player::InitJSAnimConfig() 
+void Player::InitJSAnimConfig()
 {
     if (eglCore_->m_animConfig) {
         jsAnimConfig_.version = eglCore_->m_animConfig->version;
@@ -219,7 +302,7 @@ void Player::InitJSAnimConfig()
     }
 }
 
-void Player::RenderThread() 
+void Player::RenderThread()
 {
     eglCore_ = std::make_unique<EGLCore>();
     if (isSetVideoMode_) {
@@ -262,7 +345,7 @@ void Player::RenderThread()
     StartRelease();
 }
 
-void Player::DecInputThread() 
+void Player::DecInputThread()
 {
     while (!isStop_ && isStarted_) {
         std::unique_lock<std::mutex> lock(signal_->inputMutex);
@@ -295,7 +378,7 @@ void Player::DecInputThread()
     }
 }
 
-void Player::GetBufferData(CodecBufferInfo bufferInfo) 
+void Player::GetBufferData(CodecBufferInfo bufferInfo)
 {
     std::vector<uint8_t> buffer;
     OH_AVFormat *temFormat = OH_VideoDecoder_GetOutputDescription(bufferInfo.codec);
@@ -314,7 +397,7 @@ void Player::GetBufferData(CodecBufferInfo bufferInfo)
     renderCond_.notify_all();
 }
 
-void Player::DecOutputThread() 
+void Player::DecOutputThread()
 {
     while (!isStop_ && isStarted_) {
         thread_local auto lastPushTime = std::chrono::system_clock::now();
@@ -351,7 +434,7 @@ void Player::DecOutputThread()
     }
 }
 
-void Player::DecAudioInputThread() 
+void Player::DecAudioInputThread()
 {
     while (!isStop_ && isStarted_) {
         std::unique_lock<std::mutex> lock(audioSignal_->audioInputMutex);
@@ -381,7 +464,7 @@ void Player::DecAudioInputThread()
     }
 }
 
-void Player::GetPCMData(AudioCodecBufferInfo bufferInfo) 
+void Player::GetPCMData(AudioCodecBufferInfo bufferInfo)
 {
     uint8_t *source = reinterpret_cast<uint8_t *>(OH_AVBuffer_GetAddr(bufferInfo.bufferOrigin));
     for (int i = 0; i < bufferInfo.attr.size; i++) {
@@ -389,7 +472,7 @@ void Player::GetPCMData(AudioCodecBufferInfo bufferInfo)
     }
 }
 
-void Player::DecAudioOutputThread() 
+void Player::DecAudioOutputThread()
 {
     if (audioRenderer_) {
         OH_AudioRenderer_SetSpeed(audioRenderer_, speed_);
@@ -435,7 +518,7 @@ void Player::DecAudioOutputThread()
     OH_AudioRenderer_Stop(audioRenderer_);
 }
 
-void Player::InitAudioPlayer(AudioInitData audioInitData) 
+void Player::InitAudioPlayer(AudioInitData audioInitData)
 {
     OH_AudioStreamBuilder_Create(&builder_, audioInitData.type);
     OH_AudioStreamBuilder_SetSamplingRate(builder_, audioInitData.samplingRate);
@@ -454,7 +537,7 @@ void Player::InitAudioPlayer(AudioInitData audioInitData)
     OH_AudioStreamBuilder_GenerateRenderer(builder_, &audioRenderer_);
 }
 
-void Player::PauseAndResume() 
+void Player::PauseAndResume()
 {
     if (!isStarted_) {
         return;
@@ -464,7 +547,8 @@ void Player::PauseAndResume()
     pauseCond_.notify_all();
 }
 
-void Player::Stop() {
+void Player::Stop()
+{
     if (!isStarted_) {
         return;
     }
@@ -477,7 +561,7 @@ void Player::Stop() {
     }
 }
 
-void Player::CallBackJS(VapState state, CallbackType type, int32_t err) 
+void Player::CallBackJS(VapState state, CallbackType type, int32_t err)
 {
     std::unique_lock<std::mutex> lock(callbackRefsMutex_);
     if ((callbackRefs_.find(type) != callbackRefs_.end()) && callbackAll_ && isContainerDestroy_ == false) {
@@ -491,7 +575,7 @@ void Player::CallBackJS(VapState state, CallbackType type, int32_t err)
     }
 }
 
-void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*callbackFn)(void *context)) 
+void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*callbackFn)(void *context))
 {
     if (!callbackAll_ && callbackFn) {
         callbackAll_ = callbackFn;
@@ -507,7 +591,8 @@ void Player::SetCallback(CallbackType type, stateCallback1 callbackw, void (*cal
     }
 }
 
-void Player::SetVideoMode(VideoMode videoMode) {
+void Player::SetVideoMode(VideoMode videoMode)
+{
     isSetVideoMode_ = true;
     defaultVideoMode_ = videoMode;
 }

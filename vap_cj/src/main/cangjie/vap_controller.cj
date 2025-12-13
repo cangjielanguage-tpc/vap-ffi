@@ -168,7 +168,6 @@ public class VapController <: XComponentController{
                         var downloadFile: String = this
                             .downloadFile.downloadFile(mixData[i].imgUri.toString(), this.sandDir)
                         var item = mixData[i]
-//                        item.setImgUri(LibC.mallocCString(downloadFile))
                         mixData[i] = item
                     }
                     let cangjieMixData: CangjieMixData = CangjieMixData(mixData[i].tag.toString(),
