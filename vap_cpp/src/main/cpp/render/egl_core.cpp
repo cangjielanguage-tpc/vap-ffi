@@ -592,7 +592,7 @@ template <typename T> void addVecData(std::vector<unsigned char> &data, T &&valu
 }
 
 bool EGLCore::SeparateYUV(const std::vector<uint8_t> &dataVec, int alignWidth, int alignHeight, int videoWidth,
-                          int videoHeight) 
+                          int videoHeight)
 {
     // 提前计算各分量数据大小并预留空间（避免多次扩容）
     const size_t ySize = static_cast<size_t>(videoWidth) * videoHeight;

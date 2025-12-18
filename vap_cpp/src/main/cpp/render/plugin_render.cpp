@@ -178,7 +178,8 @@ struct CallbackContext4cj {
     int ijk_id = 0;
 };
 
-CJBytesArray RemoveSurroundingChars(const std::string &str, char startChar, char endChar) {
+CJBytesArray RemoveSurroundingChars(const std::string &str, char startChar, char endChar)
+{
     size_t start = str.find_first_not_of(startChar);
     if (start == std::string::npos) {
         return {0, nullptr}; // 如果字符串中没有找到非startChar的字符，返回空字符串
@@ -191,7 +192,8 @@ CJBytesArray RemoveSurroundingChars(const std::string &str, char startChar, char
     return pag::stringToCJBytesArray((char *)str.c_str());
 }
 
-static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src) {
+static std::vector<SrcInfoo> GenSrcInfo(std::map<std::string, Src> &src)
+{
     std::vector<SrcInfoo> srcInfos;
     size_t i = 0;
     for (auto ele : src) {
@@ -415,7 +417,8 @@ CJ_EXPORT void FFIDrawPattern(int64_t surfaceId) { PluginManager::DrawPattern(su
 
 CJ_EXPORT void FFISetSurfaceId(int64_t surfaceId) { PluginManager::SetSurfaceId(surfaceId); }
 
-CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height) {
+CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height)
+{
     PluginManager::ChangeSurface(surfaceId, width, height);
     PluginRender *render = PluginManager::GetPluginRender(surfaceId);
     if (nullptr != render) {
@@ -432,11 +435,18 @@ CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height) {
     }
 }
 
-CJ_EXPORT void FFIDestroySurface(int64_t surfaceId) { PluginManager::DestroySurface(surfaceId); }
+CJ_EXPORT void FFIDestroySurface(int64_t surfaceId)
+{
+    PluginManager::DestroySurface(surfaceId);
+}
 
-CJ_EXPORT bool FFIGetXComponentHasDraw(int64_t surfaceId) { return PluginManager::GetXComponentHasDraw(surfaceId); }
+CJ_EXPORT bool FFIGetXComponentHasDraw(int64_t surfaceId)
+{
+    return PluginManager::GetXComponentHasDraw(surfaceId);
+}
 
-CJ_EXPORT bool FFIXComponentHasChangeColor(int64_t surfaceId) {
+CJ_EXPORT bool FFIXComponentHasChangeColor(int64_t surfaceId)
+{
     return PluginManager::GetXComponentHasChangeColor(surfaceId);
 }
 EXTERN_C_END

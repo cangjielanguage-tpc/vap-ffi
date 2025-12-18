@@ -23,7 +23,7 @@ CJBytesArray stringToCJBytesArray(const std::string &str)
     if (result.buf == nullptr) {
         throw std::bad_alloc();
     }
-    safe_copy(result.buf, static_cast<uint32_t>(result.size), 
+    safe_copy(result.buf, static_cast<uint32_t>(result.size),
               str.data(), static_cast<uint32_t>(result.size));
     return result;
 }

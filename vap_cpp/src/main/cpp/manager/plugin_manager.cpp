@@ -19,7 +19,7 @@ enum ContextType {
 };
 
 PluginManager::~PluginManager() { std::unique_lock<std::mutex> lock(mtx_); }
-PluginRender *PluginManager::GetPluginRender(int64_t &id) 
+PluginRender *PluginManager::GetPluginRender(int64_t &id)
 {
     if (pluginRenderMap_.find(id) != pluginRenderMap_.end()) {
         return pluginRenderMap_[id];

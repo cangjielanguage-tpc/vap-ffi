@@ -97,7 +97,6 @@ private:
     int m_width;
     int m_height;
     GLfloat m_widthPercent;
-//    unsigned char *buf[3] = {0};
     std::unique_ptr<class YuvRender> m_render = nullptr;
     std::unique_ptr<class MixRender> m_mixRender = nullptr;
     std::unique_ptr<MaskRender> m_maskRender = nullptr;

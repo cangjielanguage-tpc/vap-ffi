@@ -32,7 +32,8 @@ Player::~Player()
     }
 }
 
-static int32_t OpenFile(VAPInfo &info) {
+static int32_t OpenFile(VAPInfo &info)
+{
     const char *file = info.uri.c_str();
     info.inputFd = -1;
     info.inputFileSize = 0;
