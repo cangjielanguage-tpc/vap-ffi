@@ -3,9 +3,9 @@
 </div>
 
 <p align="center">
-<img alt="" src="https://img.shields.io/badge/release-v1.0.1-brightgreen" style="display: inline-block;" />
+<img alt="" src="https://img.shields.io/badge/release-v2.0.0-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/build-pass-brightgreen" style="display: inline-block;" />
-<img alt="" src="https://img.shields.io/badge/cjc-v1.0.3-brightgreen" style="display: inline-block;" />
+<img alt="" src="https://img.shields.io/badge/cjc-v1.1.3-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/cjcov-92.0-brightgreen" style="display: inline-block;" />
 <img alt="" src="https://img.shields.io/badge/project-open-brightgreen" style="display: inline-block;" />
 </p>
@@ -76,7 +76,7 @@ vap-ffi是在数字娱乐和在线互动的时代，视觉效果的精美程度�
     path = "${vap_cj}"
 ```
 
-3.在项目中使用 import highlightguide.* 引用 highlightguide 项目
+3.在项目中使用 import vap_cj.* 引用 vap_cj 项目
 ```cangjie
 import vap_cj.*
 ```
@@ -115,6 +115,8 @@ import ohos.component.ScrollDirection
 import ohos.component.BorderStyle
 import ohos.component.FontWeight
 import vap_cj.*
+import kit.UIKit.AnimatorResult
+import kit.UIKit.AnimatorOptions
 import ohos.component.XComponent
 import ohos.component.XComponentType
 
@@ -132,6 +134,9 @@ public class GeneralAnimation {
 
     @State
     var text: String = "fix_center"
+
+    // 播放完成轮询器：UI 动画管线帧回调（主线程）驱动，轮询 native 原子标志
+    var playDonePoller: ?AnimatorResult = None
 
     func viewInit() {
         println("GeneralAnimation")
@@ -151,6 +156,11 @@ public class GeneralAnimation {
     	this.vapController.stop()
     }
     protected func onPageShow() {}
+    protected func aboutToDisappear() {
+        // 组件销毁前取消播放完成轮询器，避免页面销毁后 animator 空转
+        this.playDonePoller?.cancel()
+        this.playDonePoller = None
+    }
 
 
 
@@ -215,11 +225,37 @@ public class GeneralAnimation {
 
             this.vapController.setDownloadAttribute(50000, download)
             this.vapController.setLoop(1)
+            this.vapController.setPlayDone(false)
             this.buttonEnabled = false
             this.vapController.play(filePath, opts, cbFn)
+            this.startPlayDonePoller()
         } catch (e: Exception) {
             Hilog.error(0, "=======GeneralAnimation  play error=========", "${e.message}")
         }
+    }
+
+    // 启动播放完成轮询：onFrame 由 UI 动画管线在主线程回调（约每帧一次），
+    // 检测到 native 播放完成标志后取消轮询并执行完成回调
+    private func startPlayDonePoller(): Unit {
+        this.playDonePoller?.cancel()
+        this.playDonePoller = AnimatorResult(
+            AnimatorOptions(
+                duration: 1000,
+                easing: "linear",
+                iterations: -1,
+                begin: 0.0,
+                end: 1.0
+            )
+        )
+        this.playDonePoller?.onFrame = {
+            value: Float64 =>
+            if (this.vapController.isPlayDone()) {
+                this.playDonePoller?.cancel()
+                this.playDonePoller = None
+                this.cbFn()
+            }
+        }
+        this.playDonePoller?.play()
     }
 
     private func pause(): Unit {
@@ -268,7 +304,7 @@ public class GeneralAnimation {
 
 在下述版本验证通过：
 
-    DevEco Studio 5.1.1 Release(5.1.1.840)
+    DevEco Studio 6.1.1 Release
 
 
 ## 开源协议 License

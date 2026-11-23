@@ -16,6 +16,8 @@ internal import ohos.hilog.Hilog
 internal import std.convert.*
 internal import ohos.component.SelectOption
 import vap_cj.*
+import kit.UIKit.AnimatorResult
+import kit.UIKit.AnimatorOptions
 import ohos.component.Stack
 import ohos.component.Scroll
 import ohos.component.Select
@@ -44,6 +46,7 @@ import ohos.component.VerticalAlign
 public class VAPXAnimation {
     @State
     var buttonEnabled: Bool = true;
+    var playDonePoller: ?AnimatorResult = None
 
     var srcInfo: Array<SrcInfo> = Array<SrcInfo>()
 
@@ -124,6 +127,12 @@ public class VAPXAnimation {
     public func onPageHide() {
         println("onPageHide")
         this.vapController.stop()
+    }
+
+    protected func aboutToDisappear() {
+        // 组件销毁前取消播放完成轮询器，避免页面销毁后 animator 空转与每帧 FFI 调用
+        this.playDonePoller?.cancel()
+        this.playDonePoller = None
     }
 
     public func viewInit() {
@@ -280,11 +289,39 @@ public class VAPXAnimation {
                 }
             }
 
+            this.vapController.setPlayDone(false)
             this.buttonEnabled = false
             this.vapController.play(filePath, opts, cbFn) // TODO
+            this.startPlayDonePoller()
         } catch (e: Exception) {
             Hilog.error(0, "=======play error=========", "${e.message}")
         }
+    }
+
+    private func startPlayDonePoller(): Unit {
+        // 用 UI 动画管线帧回调（主线程）轮询播放完成标志后更新 @State。
+        // 播放完成回调发生在 native 工作线程，而仓颉 @State 只允许主线程更新，
+        // 且当前运行时无可用跨线程→主线程调度（Emitter/spawn(Main) 实测均不可用），
+        // 故采用主线程轮询的拉模型。iterations:-1 为无限循环播放帧事件。
+        this.playDonePoller?.cancel()
+        this.playDonePoller = AnimatorResult(
+            AnimatorOptions(
+                duration: 1000,
+                easing: "linear",
+                iterations: -1,
+                begin: 0.0,
+                end: 1.0
+            )
+        )
+        this.playDonePoller?.onFrame = {
+            value: Float64 =>
+            if (this.vapController.isPlayDone()) {
+                this.playDonePoller?.cancel()
+                this.playDonePoller = None
+                this.cbFn()
+            }
+        }
+        this.playDonePoller?.play()
     }
 
     private func pause(): Unit {

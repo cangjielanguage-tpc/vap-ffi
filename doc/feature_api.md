@@ -35,6 +35,28 @@ public class VapController {
     public func stop(): Unit
     
     /*
+     * 设置播放完成标志（写入 native 层原子标志）
+     *
+     * 说明：配合 UI 侧 Animator 帧回调轮询使用。native 播放结束回调（非 UI 线程）
+     * 只置位标志，UI 主线程帧回调轮询取回后执行完成回调，保证 @State 等状态更新
+     * 始终发生在主线程。调用 play() 前应使用 setPlayDone(false) 清除历史标志。
+     *
+     * 参数 value - 播放完成标志
+     *
+     * 返回值 Unit
+     */
+    public func setPlayDone(value: Bool): Unit
+    
+    /*
+     * 查询播放完成标志（读取后自动清零）
+     *
+     * 说明：仅供 UI 主线程的帧回调轮询调用。
+     *
+     * 返回值 Bool
+     */
+    public func isPlayDone(): Bool
+    
+    /*
      * 动画循环播放
      *
      * 参数 loops - 循环次数(建议循环次数不宜过多，防止程序内存开销过大)
@@ -243,6 +265,8 @@ import ohos.component.ScrollDirection
 import ohos.component.BorderStyle
 import ohos.component.FontWeight
 import vap_cj.*
+import kit.UIKit.AnimatorResult
+import kit.UIKit.AnimatorOptions
 import ohos.component.XComponent
 import ohos.component.XComponentType
 
@@ -260,6 +284,9 @@ public class GeneralAnimation {
 
     @State
     var text: String = "fix_center"
+
+    // 播放完成轮询器：UI 动画管线帧回调（主线程）驱动，轮询 native 原子标志
+    var playDonePoller: ?AnimatorResult = None
 
     func viewInit() {
         println("GeneralAnimation")
@@ -279,6 +306,11 @@ public class GeneralAnimation {
     	this.vapController.stop()
     }
     protected func onPageShow() {}
+    protected func aboutToDisappear() {
+        // 组件销毁前取消播放完成轮询器，避免页面销毁后 animator 空转
+        this.playDonePoller?.cancel()
+        this.playDonePoller = None
+    }
 
 
 
@@ -343,11 +375,37 @@ public class GeneralAnimation {
 
             this.vapController.setDownloadAttribute(50000, download)
             this.vapController.setLoop(1)
+            this.vapController.setPlayDone(false)
             this.buttonEnabled = false
             this.vapController.play(filePath, opts, cbFn)
+            this.startPlayDonePoller()
         } catch (e: Exception) {
             Hilog.error(0, "=======GeneralAnimation  play error=========", "${e.message}")
         }
+    }
+
+    // 启动播放完成轮询：onFrame 由 UI 动画管线在主线程回调（约每帧一次），
+    // 检测到 native 播放完成标志后取消轮询并执行完成回调（cbFn 内更新 @State 合法）
+    private func startPlayDonePoller(): Unit {
+        this.playDonePoller?.cancel()
+        this.playDonePoller = AnimatorResult(
+            AnimatorOptions(
+                duration: 1000,
+                easing: "linear",
+                iterations: -1,
+                begin: 0.0,
+                end: 1.0
+            )
+        )
+        this.playDonePoller?.onFrame = {
+            value: Float64 =>
+            if (this.vapController.isPlayDone()) {
+                this.playDonePoller?.cancel()
+                this.playDonePoller = None
+                this.cbFn()
+            }
+        }
+        this.playDonePoller?.play()
     }
 
     private func pause(): Unit {

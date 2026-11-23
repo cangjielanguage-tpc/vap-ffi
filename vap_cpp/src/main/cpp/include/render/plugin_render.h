@@ -7,6 +7,7 @@
 
 #include <ace/xcomponent/native_interface_xcomponent.h>
 #include <native_window/external_window.h>
+#include <atomic>
 #include <string>
 #include <unordered_map>
 #include "egl_core.h"
@@ -42,6 +43,8 @@ public:
     uint64_t m_width;
     uint64_t m_height;
     std::unique_ptr<Player> player_ = nullptr;
+    // 播放完成标志：doneFn2（native 工作线程）置位，UI 主线程 Animator 帧回调轮询取走
+    std::atomic<int32_t> playDoneFlag_{0};
     
     static std::unordered_map<int64_t, PluginRender*> pluginRenderMap_;
     static std::unordered_map<int64_t, OHNativeWindow*> windowMap_;
