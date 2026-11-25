@@ -4,3 +4,6 @@
 /build
 /.cxx
 /.test
+# clone-repo.cmake 构建期自动克隆的三方依赖源码，勿提交
+/src/main/cpp/include/util/arm64-v8a/json/
+/src/main/cpp/include/util/x86_64/json/

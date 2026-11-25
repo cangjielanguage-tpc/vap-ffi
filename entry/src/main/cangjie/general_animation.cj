@@ -35,6 +35,8 @@ import ohos.component.ScrollDirection
 import ohos.component.BorderStyle
 import ohos.component.FontWeight
 import vap_cj.*
+import kit.UIKit.AnimatorResult
+import kit.UIKit.AnimatorOptions
 import ohos.component.XComponent
 import ohos.component.XComponentType
 import std.collection.Map
@@ -61,6 +63,8 @@ public class GeneralAnimation {
     var text: String = "fix_center"
 
     var videoName: String = "great_gift.mp4"
+    // 播放完成轮询器：UI 动画管线帧回调（主线程）驱动，轮询 native 原子标志
+    var playDonePoller: ?AnimatorResult = None
 
     func viewInit() {
         println("GeneralAnimation")
@@ -80,6 +84,11 @@ public class GeneralAnimation {
     	this.vapController.stop()
     }
     protected func onPageShow() {}
+    protected func aboutToDisappear() {
+        // 组件销毁前取消播放完成轮询器，避免页面销毁后 animator 空转与每帧 FFI 调用
+        this.playDonePoller?.cancel()
+        this.playDonePoller = None
+    }
 
 
 
@@ -144,11 +153,35 @@ public class GeneralAnimation {
 
             this.vapController.setDownloadAttribute(50000, download)
             this.vapController.setLoop(1)
+            this.vapController.setPlayDone(false)
             this.buttonEnabled = false
             this.vapController.play(filePath, opts, cbFn)
+            this.startPlayDonePoller()
         } catch (e: Exception) {
             Hilog.error(0, "=======GeneralAnimation  play error=========", "${e.message}")
         }
+    }
+
+    private func startPlayDonePoller(): Unit {
+        this.playDonePoller?.cancel()
+        this.playDonePoller = AnimatorResult(
+            AnimatorOptions(
+                duration: 1000,
+                easing: "linear",
+                iterations: -1,
+                begin: 0.0,
+                end: 1.0
+            )
+        )
+        this.playDonePoller?.onFrame = {
+            value: Float64 =>
+            if (this.vapController.isPlayDone()) {
+                this.playDonePoller?.cancel()
+                this.playDonePoller = None
+                this.cbFn()
+            }
+        }
+        this.playDonePoller?.play()
     }
 
     private func pause(): Unit {

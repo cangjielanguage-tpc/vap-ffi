@@ -263,12 +263,14 @@ void Callback(void *asyncContext) {
             }
         },
         [](uv_work_t *work, int status) {
+            // 先保存 context 再 delete work，避免 delete work 后再解引用 work->data 的释放后使用
             if (work != nullptr) {
-                LOGD("------The vap status in the thread is -work1");
-                    delete work;
-                LOGD("------The vap status in the thread is -work2");
+                CallbackContext *context = (CallbackContext *)work->data;
+                delete work;
+                if (context != nullptr) {
+                    delete context;
+                }
             }
-                    delete (CallbackContext *)work->data;
             LOGD("------The vap status in the thread is -uv_queue_work end");
         });
 }
@@ -276,7 +278,7 @@ void Callback(void *asyncContext) {
 typedef void (*Callback1)();
 void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t length, Callback1 backw, int64_t id);
 void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t length, Callback1 backw, int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
+    auto render = PluginManager::GetPluginRender(id);
     
     if(render){
         std::string uri = url;
@@ -302,8 +304,8 @@ void CangjiePluginRenderPlay(const char *url, CangjieMixData *mixDataCj, size_t 
 typedef void (*stateCallback)(int64_t,int64_t);
 void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id);
 void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id){
-    PluginRender *render = PluginManager::GetPluginRender(id);
-    if(render){
+    auto render = PluginManager::GetPluginRender(id);
+    if(render && render->player_){
         if(render->player_->IsRunning()){
             return;
         }
@@ -325,31 +327,49 @@ void CangjiePluginRenderOn(const char *str, stateCallback callbackw, int64_t id)
 
 void CangjiePluginRenderPause(int64_t id);
 void CangjiePluginRenderPause(int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
-    if(render){
+    auto render = PluginManager::GetPluginRender(id);
+    if(render && render->player_){
         render->player_->PauseAndResume();
     }
 }
 
 void CangjiePluginRenderStop(int64_t id);
 void CangjiePluginRenderStop(int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
+    auto render = PluginManager::GetPluginRender(id);
     if (render && render->player_) {
         render->player_->Stop();
     }
 }
 
+void CangjiePluginRenderSetPlayDone(int64_t id, int32_t value);
+void CangjiePluginRenderSetPlayDone(int64_t id, int32_t value) {
+    auto render = PluginManager::GetPluginRender(id);
+    if (render) {
+        render->playDoneFlag_.store(value);
+    }
+}
+
+int32_t CangjiePluginRenderIsPlayDone(int64_t id);
+int32_t CangjiePluginRenderIsPlayDone(int64_t id) {
+    // 每帧高频轮询，走不打日志的 FindPluginRender，避免 GetPluginRender 的日志洪泛拖慢 UI
+    auto render = PluginManager::FindPluginRender(id);
+    if (render != nullptr) {
+        return render->playDoneFlag_.exchange(0);
+    }
+    return 0;
+}
+
 void CangjiePluginRenderSetLoop(int64_t loops, int64_t id);
 void CangjiePluginRenderSetLoop(int64_t loops, int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
-    if (render) {
+    auto render = PluginManager::GetPluginRender(id);
+    if (render && render->player_) {
         render->player_->SetLoop(loops);
     }
 }
 
 void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id);
 void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
+    auto render = PluginManager::GetPluginRender(id);
     if (!render) {
         LOGE("Not get render");
         return;
@@ -362,12 +382,14 @@ void CangjiePluginRenderSetFitType(long long fitTypeInt, int64_t id) {
     } else {
         fitType = VideoFitType::CENTER_CROP;
     }
-    render->player_->SetFitType(fitType);
+    if (render->player_ != nullptr) {
+        render->player_->SetFitType(fitType);
+    }
 }
 
 SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id);
 SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
+    auto render = PluginManager::GetPluginRender(id);
     if (!render) {
         LOGE("Not get render");
         return {};
@@ -406,7 +428,7 @@ SrcInfoArray CangjiePluginRenderGetVideoInfo(const char *url, int64_t id) {
 
 void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id);
 void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
+    auto render = PluginManager::GetPluginRender(id);
     if (!render) {
         LOGE("Not get render");
         return;
@@ -421,7 +443,9 @@ void CangjiePluginRenderSetVideoMode(const int64_t *videoModeInt, int64_t id) {
     } else {
         videoMode = VIDEO_MODE_SPLIT_VERTICAL_REVERSE;
     }
-    render->player_->SetVideoMode(videoMode);
+    if (render->player_ != nullptr) {
+        render->player_->SetVideoMode(videoMode);
+    }
 }
 
 CJBytesArray GetsElementAnArray(CJBytesArray *cJBytesArray, int64_t i);
@@ -431,13 +455,15 @@ CJBytesArray GetsElementAnArray(CJBytesArray *cJBytesArray, int64_t i){
 
 void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id);
 void CangjiePluginRenderSetSpeed(const float *speedInt, int64_t id) {
-    PluginRender *render = PluginManager::GetPluginRender(id);
+    auto render = PluginManager::GetPluginRender(id);
     if (!render) {
         LOGE("Not get render");
         return;
     }
     float speed = std::clamp(*speedInt, 0.25f, 4.0f);
-    render->player_->SetSpeed(speed);
+    if (render->player_ != nullptr) {
+        render->player_->SetSpeed(speed);
+    }
 }
 
 EXTERN_C_START
@@ -461,15 +487,19 @@ CJ_EXPORT void FFISetSurfaceId(int64_t surfaceId)
 CJ_EXPORT void FFIChangeSurface(int64_t surfaceId, float width, float height)
 {
     PluginManager::ChangeSurface(surfaceId, width, height);
-    PluginRender *render = PluginManager::GetPluginRender(surfaceId);
+    auto render = PluginManager::GetPluginRender(surfaceId);
     if (nullptr != render) {
-        render->player_ = std::make_unique<Player>();
+        if (nullptr == render->player_) {
+            render->player_ = std::make_unique<Player>();
+        }
         render->m_width = width;
         render->m_height = height;
-        
+
         uint64_t actualWidth = 0;
         uint64_t actualHeight = 0;
-        OH_NativeXComponent_GetXComponentSize(render->m_component, render->m_window, &actualWidth, &actualHeight);
+        if (render->m_component != nullptr) {
+            OH_NativeXComponent_GetXComponentSize(render->m_component, render->m_window, &actualWidth, &actualHeight);
+        }
         if (render->player_ != nullptr && render->player_->eglCore_ != nullptr) {
             LOGI("UpdateSize start");
             render->player_->eglCore_->UpdateSize(actualWidth, actualHeight);

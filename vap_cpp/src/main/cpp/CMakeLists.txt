@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(NATIVERENDER_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 add_definitions(-DOHOS_PLATFORM)
 
-#include(clone-repo.cmake)
+include(clone-repo.cmake)
+clone_repo(json "${VAP_JSON_GIT_URL}" "${VAP_JSON_GIT_TAG}" include/util)
 add_subdirectory(${NATIVERENDER_ROOT_PATH}/include/util/${OHOS_ARCH}/json)
 #add_definitions(-DNAPI_VERSION=8)
 
